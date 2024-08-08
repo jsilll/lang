@@ -1,0 +1,4 @@
+// This is a sample program that prints 0 to the console.
+fn main(): void {
+    println(0);
+}
