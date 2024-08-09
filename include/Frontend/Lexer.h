@@ -1,6 +1,8 @@
 #ifndef LANG_LEXER_H
 #define LANG_LEXER_H
 
+#include "Support/Reporting.h"
+
 #include "Token.h"
 
 #include <vector>
@@ -14,6 +16,7 @@ enum class LexErrorKind {
 struct LexError {
   LexErrorKind kind;
   std::string_view span;
+  PrettyError toPretty() const;
 };
 
 struct LexResult {
@@ -23,11 +26,13 @@ struct LexResult {
 
 class Lexer {
 public:
-  Lexer(std::string_view buffer) : idx(0), buffer(buffer) {}
+  explicit Lexer(std::string_view buffer) : idx(0), buffer(buffer) {}
 
   LexResult lexAll(bool includeComments = false);
 
 private:
+  Token lexAlt(char c, TokenKind altKind, TokenKind defaultKind);
+
   size_t idx;
   std::string_view buffer;
 };

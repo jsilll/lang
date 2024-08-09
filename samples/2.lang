@@ -1,0 +1,8 @@
+// Static Type System
+//
+// Simple type system currently supporting the number and void types with
+// the capability to be expanded by user-defined types.
+fn main(): void {
+    let x: number = 1234;
+    let y: number = 12.34;
+}

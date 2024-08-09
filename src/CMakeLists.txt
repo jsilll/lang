@@ -1,4 +1,4 @@
-file(GLOB SOURCES CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp")
 
 add_executable(compiler ${SOURCES})
 

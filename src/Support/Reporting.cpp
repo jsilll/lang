@@ -1,4 +1,4 @@
-#include "Reporting.h"
+#include "Support/Reporting.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -8,7 +8,7 @@ unsigned getNumDigits(unsigned n) {
   unsigned digits = 0;
   while (n) {
     n /= 10;
-    digits++;
+    ++digits;
   }
   return digits;
 }
@@ -18,14 +18,14 @@ unsigned getNumDigits(unsigned n) {
 namespace lang {
 
 // NOLINTNEXTLINE
-void reportError(const SourceFile &file, const Error &error) {
+void reportError(const SourceFile &file, const PrettyError &error) {
   assert(!error.span.empty() && "span cannot be empty");
-  SourceLoc loc = file.getLocation(error.span);
-  unsigned lineNoWidth = getNumDigits(loc.line);
-  std::string lineNoSpacesTitle(lineNoWidth, ' ');
-  std::string lineNoSpacesBody(lineNoWidth + 1, ' ');
-  std::string labelSpaces(loc.column - 1, ' ');
-  std::string labelTildes(error.span.size() - 1, '~');
+  const SourceLocation loc = file.getLocation(error.span);
+  const unsigned lineNoWidth = getNumDigits(loc.line);
+  const std::string lineNoSpacesTitle(lineNoWidth, ' ');
+  const std::string lineNoSpacesBody(lineNoWidth + 1, ' ');
+  const std::string labelSpaces(loc.column - 1, ' ');
+  const std::string labelTildes(error.span.size() - 1, '~');
   llvm::errs() << lineNoSpacesTitle << " --> Error at " << loc.filename << ":"
                << loc.line << ":" << loc.column << ": " << error.title << "\n";
   llvm::errs() << lineNoSpacesBody << " |\n";

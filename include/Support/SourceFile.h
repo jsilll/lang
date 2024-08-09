@@ -1,13 +1,13 @@
 #ifndef LANG_SOURCE_FILE_H
 #define LANG_SOURCE_FILE_H
 
-#include <vector>
-
 #include "llvm/ADT/StringRef.h"
+
+#include <vector>
 
 namespace lang {
 
-struct SourceLoc {
+struct SourceLocation {
   std::size_t line;
   std::size_t column;
   std::string_view filename;
@@ -18,7 +18,7 @@ struct SourceFile {
 public:
   SourceFile(std::string_view filename, llvm::StringRef buffer);
 
-  SourceLoc getLocation(std::string_view span) const;
+  SourceLocation getLocation(std::string_view span) const;
 
 private:
   std::string_view filename;

@@ -1,0 +1,12 @@
+// Native Code Generation
+//
+// A source file is first compiled to LLVM IR, which is then passed to the host
+// platform specific LLVM backend to generate a native executable.
+//
+// Accessbile Internals
+//
+// Capability to print the Abstract Syntax Tree before and after resolution, the
+// Control Flow Graph, and the LLVM IR module.
+fn main(): void {
+    println(1.23);
+}

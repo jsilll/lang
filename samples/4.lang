@@ -1,0 +1,7 @@
+// Native Type Inference
+// 
+// When a variable is initialized, the type specifier can be omitted
+// as the type is inferred from the initialization expression.
+fn main(): void {
+    let typeInference = 1; 
+}

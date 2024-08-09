@@ -1,0 +1,21 @@
+// Smart Return Check
+//
+// Flow-sensitive return value analysis made smarter with compile
+// time expression evaluation
+fn maybeReturns(n: number): number {
+    if n > 2 {
+        return 1;
+    } else if n < -2 {
+        return -1;
+    }
+
+    // missing return 'else' branch
+}
+
+fn alwaysReturns(n: number): number {
+    if 0 && n > 2 {
+        // unreachable
+    } else {
+        return 0;
+    }
+}

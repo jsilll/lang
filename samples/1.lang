@@ -1,4 +1,7 @@
-// This is a sample program that prints 0 to the console.
+// Clean Syntax
+//
+// Unambiguous syntax, modern and easy to parse syntax with elements
+// inspired by C, Kotlin, Rust, and Swift.
 fn main(): void {
     println(0);
 }

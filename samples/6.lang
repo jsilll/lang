@@ -1,0 +1,8 @@
+// Compile Time Expression Evaluation
+//
+// Expressions are evaluated by a tree-walk interpreter
+// during the compilation phase.
+fn main(): void {
+    let x = (1 + 2) * 3 - -4;
+    println(x);
+}

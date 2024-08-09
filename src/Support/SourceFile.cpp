@@ -1,4 +1,4 @@
-#include "SourceFile.h"
+#include "Support/SourceFile.h"
 
 #include <tuple>
 
@@ -14,7 +14,7 @@ SourceFile::SourceFile(std::string_view filename, llvm::StringRef buffer)
   }
 }
 
-SourceLoc SourceFile::getLocation(std::string_view span) const {
+SourceLocation SourceFile::getLocation(std::string_view span) const {
   std::size_t begin = 0;
   std::size_t end = lines.size();
   std::size_t mid = begin + (end - begin) / 2;
@@ -28,7 +28,7 @@ SourceLoc SourceFile::getLocation(std::string_view span) const {
     }
     mid = begin + (end - begin) / 2;
   }
-  std::size_t column = span.data() - lines[mid].data();
+  const std::size_t column = span.data() - lines[mid].data();
   return {mid + 1, column + 1, filename, lines[mid]};
 }
 

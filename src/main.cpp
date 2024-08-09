@@ -1,15 +1,17 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include <cstdlib>
 
-#include "Base.h"
+#include "Support/Reporting.h"
+#include "Support/SourceFile.h"
 
-#include "Reporting.h"
-#include "SourceFile.h"
-
-#include "Lexer.h"
-#include "Parser.h"
+#include "Frontend/ASTPrinter.h"
+#include "Frontend/Lexer.h"
+#include "Frontend/Parser.h"
+#include "Frontend/Resolver.h"
 
 namespace {
+
 enum class CompilerAction {
   None,
   EmitLex,
@@ -29,28 +31,44 @@ const llvm::cl::opt<CompilerAction> compilerAction(
                    "Dump the abstract syntax tree of the input file")),
     llvm::cl::init(CompilerAction::None));
 
+template <typename T>
+void reportErrors(
+    const lang::SourceFile &source, const std::vector<T> &errors,
+    const std::size_t maxErrors = std::numeric_limits<std::size_t>::max()) {
+  std::size_t numErrors = 0;
+  for (const auto &error : errors) {
+    lang::reportError(source, error.toPretty());
+    if (++numErrors >= maxErrors) {
+      break;
+    }
+  }
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
   llvm::cl::ParseCommandLineOptions(argc, argv, "Lang Compiler\n", nullptr,
                                     nullptr, true);
 
-  auto file = llvm::MemoryBuffer::getFile(inputFilename);
+  const auto file = llvm::MemoryBuffer::getFile(inputFilename);
 
   if (!file) {
     llvm::errs() << "Error: " << file.getError().message() << "\n";
     return EXIT_FAILURE;
   }
 
-  lang::SourceFile source(inputFilename, file.get()->getBuffer());
+  const lang::SourceFile source(inputFilename, file.get()->getBuffer());
 
   lang::Lexer lexer(file.get()->getBuffer());
-  auto lexResult = lexer.lexAll();
+  const auto lexResult = lexer.lexAll();
+
+  if (lexResult.tokens.empty()) {
+    llvm::errs() << "Error: empty file\n";
+    return EXIT_FAILURE;
+  }
 
   if (!lexResult.errors.empty()) {
-    lang::Error error{lexResult.errors.front().span, "Invalid character",
-                      "Invalid character"};
-    lang::reportError(source, error);
+    reportErrors(source, lexResult.errors, 1);
     return EXIT_FAILURE;
   }
 
@@ -62,9 +80,26 @@ int main(int argc, char **argv) {
   }
 
   lang::Arena arena(KB(64));
+  lang::TypeContext tcx(arena);
 
-  lang::Parser parser(arena, lexResult.tokens);
-  auto *module = parser.parseModule();
+  lang::Parser parser(tcx, arena, lexResult.tokens);
+  const auto parseResult = parser.parseModuleAST();
 
-  DEBUG("Arena size: %zu", arena.totalAllocated());
+  if (!parseResult.errors.empty()) {
+    reportErrors(source, parseResult.errors);
+    return EXIT_FAILURE;
+  }
+
+  if (compilerAction == CompilerAction::EmitAst) {
+    lang::ASTPrinter printer(llvm::outs());
+    printer.visit(*parseResult.node);
+  }
+
+  lang::Resolver resolver;
+  resolver.resolve(*parseResult.node);
+
+  if (compilerAction == CompilerAction::EmitAst) {
+    lang::ASTPrinter printer(llvm::outs());
+    printer.visit(*parseResult.node);
+  }
 }
