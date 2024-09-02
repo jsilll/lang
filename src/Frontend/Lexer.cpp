@@ -17,6 +17,7 @@ bool isAlnum(char c) { return isAlpha(c) || isDigit(c); }
 const std::unordered_map<std::string_view, lang::TokenKind> keywordToTokenKind =
     {{"fn", lang::TokenKind::KwFn},
      {"void", lang::TokenKind::KwVoid},
+     {"number", lang::TokenKind::Number},
      {"let", lang::TokenKind::KwLet},
      {"var", lang::TokenKind::KwVar},
      {"if", lang::TokenKind::KwIf},
@@ -104,6 +105,9 @@ LexResult Lexer::lexAll(bool includeComments) {
         break;
       case '-':
         result.tokens.push_back({TokenKind::Minus, buffer.substr(idx++, 1)});
+        break;
+      case ',':
+        result.tokens.push_back({TokenKind::Comma, buffer.substr(idx++, 1)});
         break;
       case '.':
         result.tokens.push_back({TokenKind::Dot, buffer.substr(idx++, 1)});

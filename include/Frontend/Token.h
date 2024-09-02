@@ -12,6 +12,7 @@ enum class TokenKind : int {
   Star = '*',
   Plus = '+',
   Minus = '-',
+  Comma = ',',
   Dot = '.',
   Slash = '/',
   Colon = ':',
@@ -28,17 +29,18 @@ enum class TokenKind : int {
 
   KwFn = -2,
   KwVoid = -3,
-  KwLet = -4,
-  KwVar = -5,
-  KwIf = -6,
-  KwElse = -7,
-  KwWhile = -8,
-  KwReturn = -9,
+  KwNumber = -4,
+  KwLet = -5,
+  KwVar = -6,
+  KwIf = -7,
+  KwElse = -8,
+  KwWhile = -9,
+  KwReturn = -10,
 
-  Ident = -10,
-  Number = -11,
+  Ident = -11,
+  Number = -12,
 
-  Comment = -12,
+  Comment = -13,
 };
 
 std::string tokenKindToString(TokenKind kind);

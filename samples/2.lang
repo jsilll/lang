@@ -5,4 +5,9 @@
 fn main(): void {
     let x: number = 1234;
     let y: number = 12.34;
+    x + y;
+}
+
+fn sum(x: number, y: number): number {
+    return x + y;
 }

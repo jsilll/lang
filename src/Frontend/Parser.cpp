@@ -132,8 +132,21 @@ ParseResult<ModuleAST> Parser::parseModuleAST() {
 }
 
 Type *Parser::parseType() {
-  const Token *ident = expect(TokenKind::Ident);
-  return tcx->typeNumber;
+  const Token *tok = next();
+  RETURN_IF_NULL(tok);
+
+  switch (tok->kind) {
+  case TokenKind::KwVoid:
+    return tcx->typeVoid;
+    break;
+  case TokenKind::KwNumber:
+    return tcx->typeNumber;
+    break;
+  default:
+    break;
+  }
+
+  return nullptr;
 }
 
 FunctionDeclAST *Parser::parseFunctionDeclAST() {
@@ -143,14 +156,38 @@ FunctionDeclAST *Parser::parseFunctionDeclAST() {
   RETURN_IF_NULL(ident);
 
   EXPECT(TokenKind::LParen);
+
+  List<LocalStmtAST *> params;
+  LocalStmtAST *param = nullptr;
+
+  const Token *tok = peek();
+  while (tok != nullptr && tok->kind != TokenKind::RParen) {
+    param = parseLocalStmtAST(true);
+    RETURN_IF_NULL(param);
+
+    params.emplace_back(arena, param);
+
+    tok = peek();
+    RETURN_IF_NULL(tok);
+
+    if (tok == nullptr || tok->kind != TokenKind::Comma) {
+      break;
+    }
+
+    ++cur;
+    tok = peek();
+  }
+
   EXPECT(TokenKind::RParen);
+
   EXPECT(TokenKind::Colon);
-  EXPECT(TokenKind::KwVoid);
+  Type *type = parseType();
+  RETURN_IF_NULL(type);
 
   BlockStmtAST *body = parseBlockStmtAST();
   RETURN_IF_NULL(body);
 
-  return arena->make<FunctionDeclAST>(ident->span, tcx->typeVoid, body);
+  return arena->make<FunctionDeclAST>(ident->span, params, type, body);
 }
 
 BlockStmtAST *Parser::parseBlockStmtAST() {
@@ -166,10 +203,12 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
     case TokenKind::KwLet:
       ++cur;
       stmt = parseLocalStmtAST(true);
+      EXPECT(TokenKind::Semicolon);
       break;
     case TokenKind::KwVar:
       ++cur;
       stmt = parseLocalStmtAST(false);
+      EXPECT(TokenKind::Semicolon);
       break;
     default:
       stmt = parseExprStmtAST();
@@ -184,8 +223,6 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
     tok = peek();
   }
 
-  EXPECT(TokenKind::RBrace);
-
   return arena->make<BlockStmtAST>(lBrace->span, body);
 }
 
@@ -194,14 +231,20 @@ LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
   RETURN_IF_NULL(ident);
 
   EXPECT(TokenKind::Colon);
+
   Type *type = parseType();
   RETURN_IF_NULL(type);
 
-  EXPECT(TokenKind::Equal);
-  ExprAST *expr = parseExprAST();
-  RETURN_IF_NULL(expr);
+  ExprAST *expr = nullptr;
 
-  EXPECT(TokenKind::Semicolon);
+  const Token *tok = peek();
+  RETURN_IF_NULL(tok);
+
+  if (tok->kind == TokenKind::Equal) {
+    ++cur;
+    expr = parseExprAST();
+    RETURN_IF_NULL(expr);
+  }
 
   return arena->make<LocalStmtAST>(isConst, ident->span, expr);
 }

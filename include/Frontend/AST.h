@@ -136,9 +136,11 @@ struct BlockStmtAST : public StmtAST {
 /// === Declarations ===
 
 struct FunctionDeclAST : public DeclAST {
+  List<LocalStmtAST *> params;
   Type *type;
   BlockStmtAST *body;
-  FunctionDeclAST(std::string_view ident, Type *type, BlockStmtAST *body)
+  FunctionDeclAST(std::string_view ident, List<LocalStmtAST *> params,
+                  Type *type, BlockStmtAST *body)
       : DeclAST(DeclASTKind::Function, ident), type(type), body(body) {}
 };
 
