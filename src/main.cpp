@@ -1,6 +1,5 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include <cstdlib>
 
 #include "Support/Reporting.h"
 #include "Support/SourceFile.h"
@@ -73,6 +72,7 @@ int main(int argc, char **argv) {
   }
 
   if (compilerAction == CompilerAction::EmitLex) {
+    llvm::outs() << "== Tokens ==\n";
     for (const auto &token : lexResult.tokens) {
       llvm::outs() << token.toString() << "\n";
     }
@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
   }
 
   if (compilerAction == CompilerAction::EmitAst) {
+    llvm::outs() << "== AST ==\n";
     lang::ASTPrinter printer(llvm::outs());
     printer.visit(*parseResult.node);
   }
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
   resolver.resolve(*parseResult.node);
 
   if (compilerAction == CompilerAction::EmitAst) {
+    llvm::outs() << "== Resolved AST ==\n";
     lang::ASTPrinter printer(llvm::outs());
     printer.visit(*parseResult.node);
   }

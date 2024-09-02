@@ -1,5 +1,4 @@
 #include "Frontend/ASTPrinter.h"
-#include "Frontend/AST.h"
 
 namespace {
 
@@ -51,7 +50,11 @@ void ASTPrinter::visit(const ExprStmtAST &node) {
 
 void ASTPrinter::visit(const LocalStmtAST &node) {
   INDENT();
-  os << "LocalStmtAST\n";
+  os << "LocalStmtAST: " << (node.isConst ? "let" : "mut") << " " << node.span
+     << "\n";
+  if (node.expr) {
+    ASTVisitor::visit(*node.expr);
+  }
 }
 
 void ASTPrinter::visit(const BlockStmtAST &node) {

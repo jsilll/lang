@@ -16,6 +16,7 @@ namespace lang {
 enum class ParseErrorKind {
   UnexpectedEOF,
   UnexpectedToken,
+  ExpectedPrimaryExpression,
 };
 
 struct ParseError {
@@ -45,11 +46,13 @@ private:
   void sync(TokenKind syncToken);
   void sync(const std::unordered_set<TokenKind> &syncSet);
 
+  Type* parseType();
+
   FunctionDeclAST *parseFunctionDeclAST();
 
   BlockStmtAST *parseBlockStmtAST();
 
-  LocalStmtAST *parseLocalStmtAST();
+  LocalStmtAST *parseLocalStmtAST(bool isConst);
 
   ExprStmtAST *parseExprStmtAST();
 

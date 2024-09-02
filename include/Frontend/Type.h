@@ -24,6 +24,7 @@ public:
         typeNumberValue({TypeKind::Number}) {}
 
 private:
+  // TODO: Use arena field
   [[maybe_unused]] Arena *arena;
   Type typeVoidValue;
   Type typeNumberValue;

@@ -15,22 +15,22 @@ protected:
   void visit(MaybeConst<ExprAST> &node) {
     switch (node.kind) {
     case ExprASTKind::Number:
-      derived().visit(as<NumberExprAST>(node));
+      derived().visit(static_cast<MaybeConst<NumberExprAST>&>(node));
       break;
     case ExprASTKind::Identifier:
-      derived().visit(as<IdentifierExprAST>(node));
+      derived().visit(static_cast<MaybeConst<IdentifierExprAST>&>(node));
       break;
     case ExprASTKind::Unary:
-      derived().visit(as<UnaryExprAST>(node));
+      derived().visit(static_cast<MaybeConst<UnaryExprAST>&>(node));
       break;
     case ExprASTKind::Binary:
-      derived().visit(as<BinaryExprAST>(node));
+      derived().visit(static_cast<MaybeConst<BinaryExprAST>&>(node));
       break;
     case ExprASTKind::Call:
-      derived().visit(as<CallExprAST>(node));
+      derived().visit(static_cast<MaybeConst<CallExprAST>&>(node));
       break;
     case ExprASTKind::Index:
-      derived().visit(as<IndexExprAST>(node));
+      derived().visit(static_cast<MaybeConst<IndexExprAST>&>(node));
       break;
     }
   }
@@ -38,13 +38,13 @@ protected:
   void visit(MaybeConst<StmtAST> &node) {
     switch (node.kind) {
     case StmtASTKind::Expr:
-      derived().visit(as<ExprStmtAST>(node));
+      derived().visit(static_cast<MaybeConst<ExprStmtAST>&>(node));
       break;
     case StmtASTKind::Local:
-      derived().visit(as<LocalStmtAST>(node));
+      derived().visit(static_cast<MaybeConst<LocalStmtAST>&>(node));
       break;
     case StmtASTKind::Block:
-      derived().visit(as<BlockStmtAST>(node));
+      derived().visit(static_cast<MaybeConst<BlockStmtAST>&>(node));
       break;
     }
   }
@@ -52,16 +52,13 @@ protected:
   void visit(MaybeConst<DeclAST> &node) {
     switch (node.kind) {
     case DeclASTKind::Function:
-      derived().visit(as<FunctionDeclAST>(node));
+      derived().visit(static_cast<MaybeConst<FunctionDeclAST>&>(node));
       break;
     }
   }
 
 private:
   Derived &derived() { return static_cast<Derived &>(*this); }
-  template <typename T> static MaybeConst<T> &as(MaybeConst<T> &node) {
-    return static_cast<MaybeConst<T> &>(node);
-  }
 };
 
 template <typename Derived>

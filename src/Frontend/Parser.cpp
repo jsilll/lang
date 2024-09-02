@@ -42,9 +42,11 @@ PrettyError ParseError::toPretty() const {
   switch (kind) {
   case ParseErrorKind::UnexpectedEOF:
     return {span, "Unexpected end of file", "Unexpected end of file"};
-  case lang::ParseErrorKind::UnexpectedToken:
+  case ParseErrorKind::UnexpectedToken:
     return {span, "Unexpected token",
             "Expected " + tokenKindToString(expected) + " instead"};
+  case ParseErrorKind::ExpectedPrimaryExpression:
+    return {span, "Unexpected token", "Expected a primary expression instead"};
   }
   return {span, {}, {}};
 }
@@ -129,6 +131,11 @@ ParseResult<ModuleAST> Parser::parseModuleAST() {
   return {arena->make<ModuleAST>("main", decls), std::move(errors)};
 }
 
+Type *Parser::parseType() {
+  const Token *ident = expect(TokenKind::Ident);
+  return tcx->typeNumber;
+}
+
 FunctionDeclAST *Parser::parseFunctionDeclAST() {
   EXPECT(TokenKind::KwFn);
 
@@ -157,7 +164,12 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
   while (tok != nullptr && tok->kind != TokenKind::RBrace) {
     switch (tok->kind) {
     case TokenKind::KwLet:
-      stmt = parseLocalStmtAST();
+      ++cur;
+      stmt = parseLocalStmtAST(true);
+      break;
+    case TokenKind::KwVar:
+      ++cur;
+      stmt = parseLocalStmtAST(false);
       break;
     default:
       stmt = parseExprStmtAST();
@@ -177,20 +189,21 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
   return arena->make<BlockStmtAST>(lBrace->span, body);
 }
 
-LocalStmtAST *Parser::parseLocalStmtAST() {
-  EXPECT(TokenKind::KwLet);
-
+LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
   const Token *ident = expect(TokenKind::Ident);
   RETURN_IF_NULL(ident);
 
   EXPECT(TokenKind::Colon);
-  EXPECT(TokenKind::KwVar);
-  EXPECT(TokenKind::Equal);
+  Type *type = parseType();
+  RETURN_IF_NULL(type);
 
+  EXPECT(TokenKind::Equal);
   ExprAST *expr = parseExprAST();
   RETURN_IF_NULL(expr);
 
-  return arena->make<LocalStmtAST>(ident->span, expr);
+  EXPECT(TokenKind::Semicolon);
+
+  return arena->make<LocalStmtAST>(isConst, ident->span, expr);
 }
 
 ExprStmtAST *Parser::parseExprStmtAST() {
@@ -267,7 +280,7 @@ ExprAST *Parser::parsePrimaryExprAST() {
   }
 
   errors.push_back(
-      {ParseErrorKind::UnexpectedToken, tok->span, TokenKind::Number});
+      {ParseErrorKind::ExpectedPrimaryExpression, tok->span, TokenKind::Amp});
 
   return nullptr;
 }

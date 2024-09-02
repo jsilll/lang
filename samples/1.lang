@@ -5,3 +5,5 @@
 fn main(): void {
     println(0);
 }
+
+fn println() : void {}

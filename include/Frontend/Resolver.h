@@ -10,9 +10,11 @@
 namespace lang {
 
 class Resolver : public MutableASTVisitor<Resolver> {
-  friend class MutableASTVisitor<Resolver>;
+  friend class ASTVisitor<Resolver, false>;
 
 public:
+  Resolver() : onlyTopLevel(true) {}
+
   void resolve(ModuleAST &module);
 
 private:
@@ -38,6 +40,7 @@ private:
 
   LocalStmtAST* lookupLocal(std::string_view ident) const;
 
+  bool onlyTopLevel;
   std::unordered_map<std::string_view, FunctionDeclAST*> functions;
   std::vector<std::unordered_map<std::string_view, LocalStmtAST*>> locals;
 };

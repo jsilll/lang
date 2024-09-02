@@ -121,10 +121,10 @@ struct ExprStmtAST : public StmtAST {
 };
 
 struct LocalStmtAST : public StmtAST {
-  std::string_view ident;
+  bool isConst;
   ExprAST *expr;
-  LocalStmtAST(std::string_view ident, ExprAST *expr)
-      : StmtAST(StmtASTKind::Local, ident), ident(ident), expr(expr) {}
+  LocalStmtAST(bool isConst, std::string_view ident, ExprAST *expr)
+      : StmtAST(StmtASTKind::Local, ident), expr(expr) {}
 };
 
 struct BlockStmtAST : public StmtAST {
