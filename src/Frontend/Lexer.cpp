@@ -15,14 +15,10 @@ bool isDigit(char c) { return c >= '0' && c <= '9'; }
 bool isAlnum(char c) { return isAlpha(c) || isDigit(c); }
 
 const std::unordered_map<std::string_view, lang::TokenKind> keywordToTokenKind =
-    {{"fn", lang::TokenKind::KwFn},
-     {"void", lang::TokenKind::KwVoid},
-     {"number", lang::TokenKind::KwNumber},
-     {"let", lang::TokenKind::KwLet},
-     {"var", lang::TokenKind::KwVar},
-     {"if", lang::TokenKind::KwIf},
-     {"else", lang::TokenKind::KwElse},
-     {"while", lang::TokenKind::KwWhile},
+    {{"fn", lang::TokenKind::KwFn},         {"void", lang::TokenKind::KwVoid},
+     {"number", lang::TokenKind::KwNumber}, {"let", lang::TokenKind::KwLet},
+     {"var", lang::TokenKind::KwVar},       {"if", lang::TokenKind::KwIf},
+     {"else", lang::TokenKind::KwElse},     {"while", lang::TokenKind::KwWhile},
      {"return", lang::TokenKind::KwReturn}};
 
 } // namespace
@@ -34,7 +30,7 @@ PrettyError LexError::toPretty() const {
   case LexErrorKind::InvalidCharacter:
     return {span, "Invalid character", "Invalid character"};
   }
-  return {span, {}, {}};
+  return {span, "Unknown lex error title", "Unknown lex error label"};
 }
 
 LexResult Lexer::lexAll(bool includeComments) {
@@ -116,7 +112,8 @@ LexResult Lexer::lexAll(bool includeComments) {
         result.tokens.push_back({TokenKind::Colon, buffer.substr(idx++, 1)});
         break;
       case ';':
-        result.tokens.push_back({TokenKind::Semicolon, buffer.substr(idx++, 1)});
+        result.tokens.push_back(
+            {TokenKind::Semicolon, buffer.substr(idx++, 1)});
         break;
       case '<':
         result.tokens.push_back({TokenKind::Less, buffer.substr(idx++, 1)});

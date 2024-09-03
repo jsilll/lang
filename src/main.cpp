@@ -97,7 +97,12 @@ int main(int argc, char **argv) {
   }
 
   lang::Resolver resolver;
-  resolver.resolve(*parseResult.node);
+  const auto resolveResult = resolver.resolve(*parseResult.node);
+
+  if (!resolveResult.errors.empty()) {
+      reportErrors(source, resolveResult.errors);
+      return EXIT_FAILURE;
+  }
 
   if (compilerAction == CompilerAction::EmitAst) {
     llvm::outs() << "== Resolved AST ==\n";

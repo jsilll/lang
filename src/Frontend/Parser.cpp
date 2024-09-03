@@ -17,6 +17,11 @@ const std::unordered_set<lang::TokenKind> declLevelSyncSet = {
     lang::TokenKind::KwFn,
 };
 
+const std::unordered_set<lang::TokenKind> stmtLevelSyncSet = {
+    lang::TokenKind::Semicolon,
+    lang::TokenKind::RBrace,
+};
+
 const std::unordered_map<lang::TokenKind, BinOpPair> binOpMap = {
     {lang::TokenKind::Plus, {lang::BinOpKind::Add, 1, 1}},
     {lang::TokenKind::Minus, {lang::BinOpKind::Sub, 1, 1}},
@@ -48,7 +53,7 @@ PrettyError ParseError::toPretty() const {
   case ParseErrorKind::ExpectedPrimaryExpression:
     return {span, "Unexpected token", "Expected a primary expression instead"};
   }
-  return {span, "Unknown error title", "Unknown error label"};
+  return {span, "Unknown parse error title", "Unknown parse error label"};
 }
 
 const Token *Parser::peek() {
@@ -98,7 +103,7 @@ void Parser::sync(TokenKind syncToken) {
 void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
   while (cur != end) {
     if (syncSet.find(cur->kind) != syncSet.end()) {
-      return;
+      break;
     }
     ++cur;
   }
@@ -220,7 +225,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
     if (stmt != nullptr) {
       body.emplace_back(arena, stmt);
     } else {
-      sync(TokenKind::Semicolon);
+      sync(stmtLevelSyncSet);
       next();
     }
     tok = peek();

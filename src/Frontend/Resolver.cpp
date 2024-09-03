@@ -1,11 +1,18 @@
 #include "Frontend/Resolver.h"
-#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 
 namespace lang {
 
-void Resolver::resolve(ModuleAST &module) {
+PrettyError ResolveError::toPretty() const {
+  switch (kind) {
+  case ResolveErrorKind::UnresolvedIdentifier:
+    return {span, "Unresolved identifier", "Cannot be resolved"};
+  }
+  return {span, "Unknown resolve error title", "Unknown resolve error label"};
+}
+
+ResolveResult Resolver::resolve(ModuleAST &module) {
   for (const auto &decl : module.decls) {
     ASTVisitor::visit(*decl);
   }
@@ -13,6 +20,7 @@ void Resolver::resolve(ModuleAST &module) {
   for (const auto &decl : module.decls) {
     ASTVisitor::visit(*decl);
   }
+  return {std::move(errors)};
 }
 
 void Resolver::visit(FunctionDeclAST &node) {
@@ -56,9 +64,12 @@ void Resolver::visit(IdentifierExprAST &node) {
   }
 
   LocalStmtAST *local = lookupLocal(node.span);
-  if (local != nullptr) {
-    node.reference = local;
+  if (local == nullptr) {
+    errors.push_back({ResolveErrorKind::UnresolvedIdentifier, node.span});
+    return;
   }
+
+  node.reference = local;
 }
 
 void Resolver::visit(NumberExprAST &node) {}
@@ -82,14 +93,12 @@ void Resolver::visit(IndexExprAST &node) {
 
 LocalStmtAST *Resolver::lookupLocal(std::string_view ident) const {
   for (auto it = locals.rbegin(); it != locals.rend(); ++it) {
-    llvm::outs() << "Trying a scope\n";
     const auto &locals = *it;
     const auto found = locals.find(ident);
     if (found != locals.end()) {
       return found->second;
     }
   }
-  llvm::outs() << "Didn't find any local for " << ident << "\n";
   return nullptr;
 }
 
