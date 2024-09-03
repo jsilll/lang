@@ -30,7 +30,7 @@ void ASTPrinter::ident() {
 
 void ASTPrinter::visit(const ModuleAST &node) {
   INDENT();
-  os << "ModuleAST: " << node.ident << "\n";
+  os << "ModuleAST: " << node.ident << '\n';
   for (const DeclAST *decl : node.decls) {
     ASTVisitor::visit(*decl);
   }
@@ -38,7 +38,10 @@ void ASTPrinter::visit(const ModuleAST &node) {
 
 void ASTPrinter::visit(const FunctionDeclAST &node) {
   INDENT();
-  os << "FunctionDeclAST: " << node.ident << "\n";
+  os << "FunctionDeclAST: " << node.ident << '\n';
+  for (auto *param : node.params) {
+    visit(*param);
+  }
   ASTVisitor::visit(*node.body);
 }
 
@@ -58,9 +61,11 @@ void ASTPrinter::visit(const LocalStmtAST &node) {
 }
 
 void ASTPrinter::visit(const ReturnStmtAST &node) {
-    INDENT();
-    os << "ReturnStmtAST\n";
+  INDENT();
+  os << "ReturnStmtAST\n";
+  if (node.expr != nullptr) {
     ASTVisitor::visit(*node.expr);
+  }
 }
 
 void ASTPrinter::visit(const BlockStmtAST &node) {

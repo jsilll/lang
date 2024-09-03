@@ -9,4 +9,6 @@ fn main(): void {
       immutable = 0;
       mutable = mutable - 1;
     }
+
+    return;
 }

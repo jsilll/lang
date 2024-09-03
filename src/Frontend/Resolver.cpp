@@ -12,7 +12,7 @@ PrettyError ResolveError::toPretty() const {
   return {span, "Unknown resolve error title", "Unknown resolve error label"};
 }
 
-ResolveResult Resolver::resolve(ModuleAST &module) {
+ResolveResult Resolver::resolveModuleAST(ModuleAST &module) {
   for (const auto &decl : module.decls) {
     ASTVisitor::visit(*decl);
   }
@@ -46,7 +46,11 @@ void Resolver::visit(LocalStmtAST &node) {
   }
 }
 
-void Resolver::visit(ReturnStmtAST &node) { ASTVisitor::visit(*node.expr); }
+void Resolver::visit(ReturnStmtAST &node) {
+  if (node.expr != nullptr) {
+    ASTVisitor::visit(*node.expr);
+  }
+}
 
 void Resolver::visit(BlockStmtAST &node) {
   locals.emplace_back();
@@ -72,7 +76,7 @@ void Resolver::visit(IdentifierExprAST &node) {
   node.reference = local;
 }
 
-void Resolver::visit(NumberExprAST &node) {}
+void Resolver::visit([[maybe_unused]] NumberExprAST &node) {}
 
 void Resolver::visit(UnaryExprAST &node) { ASTVisitor::visit(*node.expr); }
 

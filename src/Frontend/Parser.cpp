@@ -36,6 +36,11 @@ const std::unordered_map<lang::TokenKind, BinOpPair> binOpMap = {
     return nullptr;                                                            \
   }
 
+#define BREAK_IF_NULL(expr)                                                    \
+  if ((expr) == nullptr) {                                                     \
+    break;                                                                     \
+  }
+
 #define RETURN_IF_NULL(expr)                                                   \
   if ((expr) == nullptr) {                                                     \
     return nullptr;                                                            \
@@ -50,6 +55,8 @@ PrettyError ParseError::toPretty() const {
   case ParseErrorKind::UnexpectedToken:
     return {span, "Unexpected token",
             "Expected " + tokenKindToString(expected) + " instead"};
+  case ParseErrorKind::ExpectedTypeAnnotation:
+    return {span, "Unexpected token", "Expected a type annotation instead"};
   case ParseErrorKind::ExpectedPrimaryExpression:
     return {span, "Unexpected token", "Expected a primary expression instead"};
   }
@@ -91,16 +98,23 @@ const Token *Parser::expect(TokenKind kind) {
   return tok;
 }
 
-void Parser::sync(TokenKind syncToken) {
+void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
+  // Syncing with first token in syncSet
   while (cur != end) {
-    if (cur->kind == syncToken) {
-      return;
+    if (syncSet.find(cur->kind) != syncSet.end()) {
+      break;
     }
     ++cur;
   }
-}
 
-void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
+  // Return if we are at end or end - 1
+  if (cur == end || cur + 1 == end) {
+    return;
+  }
+
+  ++cur;
+
+  // Skip all the following tokens that are in the syncSet
   while (cur != end) {
     if (syncSet.find(cur->kind) != syncSet.end()) {
       break;
@@ -109,7 +123,7 @@ void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
   }
 }
 
-ParseResult<ModuleAST> Parser::parseModuleAST() {
+ParseResult Parser::parseModuleAST() {
   List<DeclAST *> decls;
   DeclAST *decl = nullptr;
 
@@ -168,7 +182,7 @@ FunctionDeclAST *Parser::parseFunctionDeclAST() {
   EXPECT(TokenKind::RParen);
 
   EXPECT(TokenKind::Colon);
-  Type *type = parseType();
+  Type *type = parseTypeAnnotation();
   RETURN_IF_NULL(type);
 
   BlockStmtAST *body = parseBlockStmtAST();
@@ -177,18 +191,18 @@ FunctionDeclAST *Parser::parseFunctionDeclAST() {
   return arena->make<FunctionDeclAST>(ident->span, params, type, body);
 }
 
-Type *Parser::parseType() {
+Type *Parser::parseTypeAnnotation() {
   const Token *tok = next();
   RETURN_IF_NULL(tok);
 
   switch (tok->kind) {
   case TokenKind::KwVoid:
-    return tcx->typeVoid;
+    return tcx->getTyVoid();
   case TokenKind::KwNumber:
-    return tcx->typeNumber;
+    return tcx->getTyNumber();
   default:
     errors.push_back(
-        {ParseErrorKind::UnexpectedToken, tok->span, TokenKind::KwVoid});
+        {ParseErrorKind::ExpectedTypeAnnotation, tok->span, TokenKind::Amp});
     return nullptr;
   }
 }
@@ -204,19 +218,23 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
   while (tok != nullptr && tok->kind != TokenKind::RBrace) {
     switch (tok->kind) {
     case TokenKind::KwLet:
-      ++cur;
-      stmt = parseLocalStmtAST(true);
-      EXPECT(TokenKind::Semicolon);
-      break;
     case TokenKind::KwVar:
       ++cur;
-      stmt = parseLocalStmtAST(false);
+      stmt = parseLocalStmtAST(tok->kind == TokenKind::KwLet);
+      BREAK_IF_NULL(stmt);
       EXPECT(TokenKind::Semicolon);
       break;
     case TokenKind::KwReturn:
       ++cur;
-      stmt = arena->make<ReturnStmtAST>(tok->span, parseExprAST());
+      stmt = arena->make<ReturnStmtAST>(
+          tok->span, cur != end && cur->kind != TokenKind::Semicolon
+                         ? parseExprAST()
+                         : nullptr);
       EXPECT(TokenKind::Semicolon);
+      break;
+    case TokenKind::LBrace:
+      stmt = parseBlockStmtAST();
+      BREAK_IF_NULL(stmt);
       break;
     default:
       stmt = parseExprStmtAST();
@@ -242,7 +260,7 @@ LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
 
   EXPECT(TokenKind::Colon);
 
-  Type *type = parseType();
+  Type *type = parseTypeAnnotation();
   RETURN_IF_NULL(type);
 
   const Token *tok = peek();

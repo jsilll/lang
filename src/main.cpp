@@ -15,6 +15,7 @@ enum class CompilerAction {
   None,
   EmitLex,
   EmitAst,
+  EmitSrc,
 };
 
 const llvm::cl::opt<std::string>
@@ -27,21 +28,10 @@ const llvm::cl::opt<CompilerAction> compilerAction(
         clEnumValN(CompilerAction::EmitLex, "lex",
                    "Dump the lexed tokens of the input file"),
         clEnumValN(CompilerAction::EmitAst, "ast",
-                   "Dump the abstract syntax tree of the input file")),
+                   "Dump the abstract syntax tree of the input file"),
+        clEnumValN(CompilerAction::EmitSrc, "src",
+                   "Dump the original source code of the input file")),
     llvm::cl::init(CompilerAction::None));
-
-template <typename T>
-void reportErrors(
-    const lang::SourceFile &source, const std::vector<T> &errors,
-    const std::size_t maxErrors = std::numeric_limits<std::size_t>::max()) {
-  std::size_t numErrors = 0;
-  for (const auto &error : errors) {
-    lang::reportError(source, error.toPretty());
-    if (++numErrors >= maxErrors) {
-      break;
-    }
-  }
-}
 
 } // namespace
 
@@ -66,47 +56,51 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  if (!lexResult.errors.empty()) {
-    reportErrors(source, lexResult.errors, 1);
-    return EXIT_FAILURE;
-  }
-
   if (compilerAction == CompilerAction::EmitLex) {
-    llvm::outs() << "== Tokens ==\n";
     for (const auto &token : lexResult.tokens) {
       llvm::outs() << token.toString() << "\n";
     }
     return EXIT_SUCCESS;
   }
 
-  lang::Arena arena(KB(64));
+  if (!lexResult.errors.empty()) {
+    reportErrors(source, lexResult.errors, 1);
+    return EXIT_FAILURE;
+  }
+
+  lang::Arena arena(lang::kiloBytes(64));
   lang::TypeContext tcx(arena);
 
   lang::Parser parser(tcx, arena, lexResult.tokens);
   const auto parseResult = parser.parseModuleAST();
+
+  if (compilerAction == CompilerAction::EmitAst) {
+    llvm::outs() << "== AST ==\n";
+    lang::ASTPrinter printer(llvm::outs());
+    printer.visit(*parseResult.module);
+  }
+
+  if (compilerAction == CompilerAction::EmitSrc) {
+    // TODO: Implement this
+    return EXIT_SUCCESS;
+  }
 
   if (!parseResult.errors.empty()) {
     reportErrors(source, parseResult.errors);
     return EXIT_FAILURE;
   }
 
-  if (compilerAction == CompilerAction::EmitAst) {
-    llvm::outs() << "== AST ==\n";
-    lang::ASTPrinter printer(llvm::outs());
-    printer.visit(*parseResult.node);
-  }
-
   lang::Resolver resolver;
-  const auto resolveResult = resolver.resolve(*parseResult.node);
+  const auto resolveResult = resolver.resolveModuleAST(*parseResult.module);
 
   if (!resolveResult.errors.empty()) {
-      reportErrors(source, resolveResult.errors);
-      return EXIT_FAILURE;
+    reportErrors(source, resolveResult.errors);
+    return EXIT_FAILURE;
   }
 
   if (compilerAction == CompilerAction::EmitAst) {
     llvm::outs() << "== Resolved AST ==\n";
     lang::ASTPrinter printer(llvm::outs());
-    printer.visit(*parseResult.node);
+    printer.visit(*parseResult.module);
   }
 }

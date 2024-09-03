@@ -12,22 +12,28 @@ enum class TypeKind {
 
 struct Type {
   TypeKind kind;
+  Type(TypeKind kind) : kind(kind) {}
 };
 
 class TypeContext {
 public:
-  Type *typeVoid = &typeVoidValue;
-  Type *typeNumber = &typeNumberValue;
+  explicit TypeContext(Arena &arena) : arena(&arena) {
+    tyVoid = arena.make<Type>(TypeKind::Void);
+    tyNumber = arena.make<Type>(TypeKind::Number);
+  }
 
-  explicit TypeContext(Arena &arena)
-      : // arena(&arena),
-        typeVoidValue({TypeKind::Void}), typeNumberValue({TypeKind::Number}) {}
+  Type *getTyVoid() const { return tyVoid; }
+
+  Type *getTyNumber() const { return tyNumber; }
+
+  template <typename... Args> Type *make(Args &&...args) {
+    return arena->make<Type>(std::forward<Args>(args)...);
+  }
 
 private:
-  // TODO: Use arena field
-  // Arena *arena;
-  Type typeVoidValue;
-  Type typeNumberValue;
+  Arena *arena;
+  Type *tyVoid;
+  Type *tyNumber;
 };
 
 } // namespace lang

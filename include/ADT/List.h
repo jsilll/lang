@@ -32,31 +32,31 @@ public:
     using pointer = T *;
     using reference = T &;
 
-    iterator(Node *node) noexcept : current(node) {}
+    iterator(Node *node) noexcept : cur(node) {}
 
-    reference operator*() const { return current->data; }
+    reference operator*() const { return cur->data; }
 
-    pointer operator->() const { return &current->data; }
+    pointer operator->() const { return &cur->data; }
 
     iterator &operator++() {
-      current = current->next;
+      cur = cur->next;
       return *this;
     }
 
     iterator operator++(int) {
       iterator tmp = *this;
-      current = current->next;
+      cur = cur->next;
       return tmp;
     }
 
     bool operator==(const iterator &other) const {
-      return current == other.current;
+      return cur == other.cur;
     }
 
     bool operator!=(const iterator &other) const { return !(*this == other); }
 
   private:
-    Node *current;
+    Node *cur;
   };
 
   // NOLINTNEXTLINE
@@ -68,24 +68,24 @@ public:
     using pointer = const T *;
     using reference = const T &;
 
-    const_iterator(const Node *node) noexcept : current(node) {}
+    const_iterator(const Node *node) noexcept : cur(node) {}
 
-    reference operator*() const { return current->data; }
-    pointer operator->() const { return &current->data; }
+    reference operator*() const { return cur->data; }
+    pointer operator->() const { return &cur->data; }
 
     const_iterator &operator++() {
-      current = current->next;
+      cur = cur->next;
       return *this;
     }
 
     const_iterator operator++(int) {
       const_iterator tmp = *this;
-      current = current->next;
+      cur = cur->next;
       return tmp;
     }
 
     bool operator==(const const_iterator &other) const {
-      return current == other.current;
+      return cur == other.cur;
     }
 
     bool operator!=(const const_iterator &other) const {
@@ -93,7 +93,7 @@ public:
     }
 
   private:
-    const Node *current;
+    const Node *cur;
   };
 
   List() noexcept : head(nullptr), tail(nullptr), size_(0) {}

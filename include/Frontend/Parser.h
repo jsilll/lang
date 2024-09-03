@@ -15,6 +15,7 @@ namespace lang {
 enum class ParseErrorKind {
   UnexpectedEOF,
   UnexpectedToken,
+  ExpectedTypeAnnotation,
   ExpectedPrimaryExpression,
 };
 
@@ -25,8 +26,8 @@ struct ParseError {
   PrettyError toPretty() const;
 };
 
-template <typename T> struct ParseResult {
-  T *node;
+struct ParseResult {
+  ModuleAST *module;
   std::vector<ParseError> errors;
 };
 
@@ -35,19 +36,17 @@ public:
   Parser(TypeContext &tcx, Arena &arena, const std::vector<Token> &tokens)
       : tcx(&tcx), arena(&arena), cur(tokens.begin()), end(tokens.end()) {}
 
-  ParseResult<ModuleAST> parseModuleAST();
+  ParseResult parseModuleAST();
 
 private:
   const Token *peek();
   const Token *next();
   const Token *expect(TokenKind kind);
-
-  void sync(TokenKind syncToken);
   void sync(const std::unordered_set<TokenKind> &syncSet);
 
   FunctionDeclAST *parseFunctionDeclAST();
 
-  Type* parseType();
+  Type* parseTypeAnnotation();
 
   BlockStmtAST *parseBlockStmtAST();
 

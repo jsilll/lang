@@ -10,3 +10,5 @@
 fn main(): void {
     println(1.23);
 }
+
+fn println(): void { return; }

@@ -125,7 +125,7 @@ struct LocalStmtAST : public StmtAST {
   bool isConst;
   ExprAST *expr;
   LocalStmtAST(bool isConst, std::string_view ident, ExprAST *expr)
-      : StmtAST(StmtASTKind::Local, ident), expr(expr) {}
+      : StmtAST(StmtASTKind::Local, ident), isConst(isConst), expr(expr) {}
 };
 
 struct ReturnStmtAST : public StmtAST {
@@ -148,7 +148,8 @@ struct FunctionDeclAST : public DeclAST {
   BlockStmtAST *body;
   FunctionDeclAST(std::string_view ident, List<LocalStmtAST *> params,
                   Type *type, BlockStmtAST *body)
-      : DeclAST(DeclASTKind::Function, ident), type(type), body(body) {}
+      : DeclAST(DeclASTKind::Function, ident), params(params), type(type),
+        body(body) {}
 };
 
 /// === Identifier Expressions ===

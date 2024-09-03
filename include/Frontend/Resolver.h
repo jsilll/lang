@@ -31,7 +31,7 @@ class Resolver : public MutableASTVisitor<Resolver> {
 public:
   Resolver() : deepResolution(false) {}
 
-  ResolveResult resolve(ModuleAST &module);
+  ResolveResult resolveModuleAST(ModuleAST &module);
 
 private:
   void visit(FunctionDeclAST &node);

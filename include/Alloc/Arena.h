@@ -4,11 +4,19 @@
 #include <list>
 #include <memory>
 
-#define KB(x) ((x) * 1024UL)
-#define MB(x) ((x) * 1024UL * 1024UL)
-#define GB(x) ((x) * 1024UL * 1024UL * 1024UL)
-
 namespace lang {
+
+constexpr std::size_t kiloBytes(const std::size_t bytes) {
+  return bytes * 1024;
+}
+
+constexpr std::size_t megaBytes(const std::size_t bytes) {
+  return bytes * 1024 * 1024;
+}
+
+constexpr std::size_t gigaBytes(const std::size_t bytes) {
+  return bytes * 1024 * 1024 * 1024;
+}
 
 class Arena {
 public:
