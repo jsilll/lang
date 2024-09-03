@@ -57,6 +57,12 @@ void ASTPrinter::visit(const LocalStmtAST &node) {
   }
 }
 
+void ASTPrinter::visit(const ReturnStmtAST &node) {
+    INDENT();
+    os << "ReturnStmtAST\n";
+    ASTVisitor::visit(*node.expr);
+}
+
 void ASTPrinter::visit(const BlockStmtAST &node) {
   INDENT();
   os << "BlockStmtAST\n";

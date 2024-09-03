@@ -20,6 +20,8 @@ public:
 
   void visit(const LocalStmtAST &node);
 
+  void visit(const ReturnStmtAST &node);
+
   void visit(const BlockStmtAST &node);
 
   void visit(const IdentifierExprAST &node);

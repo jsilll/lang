@@ -18,6 +18,8 @@ std::string tokenKindToString(lang::TokenKind kind) {
     return "'fn'";
   case lang::TokenKind::KwVoid:
     return "'void'";
+  case lang::TokenKind::KwNumber:
+    return "'number'";
   case lang::TokenKind::KwLet:
     return "'let'";
   case lang::TokenKind::KwVar:

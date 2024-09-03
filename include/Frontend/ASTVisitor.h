@@ -43,6 +43,9 @@ protected:
     case StmtASTKind::Local:
       derived().visit(static_cast<MaybeConst<LocalStmtAST>&>(node));
       break;
+    case StmtASTKind::Return:
+      derived().visit(static_cast<MaybeConst<ReturnStmtAST>&>(node));
+      break;
     case StmtASTKind::Block:
       derived().visit(static_cast<MaybeConst<BlockStmtAST>&>(node));
       break;

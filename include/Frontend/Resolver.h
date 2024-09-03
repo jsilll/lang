@@ -13,7 +13,7 @@ class Resolver : public MutableASTVisitor<Resolver> {
   friend class ASTVisitor<Resolver, false>;
 
 public:
-  Resolver() : onlyTopLevel(true) {}
+  Resolver() : deepResolution(false) {}
 
   void resolve(ModuleAST &module);
 
@@ -23,6 +23,8 @@ private:
   void visit(ExprStmtAST &node);
 
   void visit(LocalStmtAST &node);
+
+  void visit(ReturnStmtAST &node);
 
   void visit(BlockStmtAST &node);
 
@@ -38,11 +40,11 @@ private:
 
   void visit(IndexExprAST &node);
 
-  LocalStmtAST* lookupLocal(std::string_view ident) const;
+  LocalStmtAST *lookupLocal(std::string_view ident) const;
 
-  bool onlyTopLevel;
-  std::unordered_map<std::string_view, FunctionDeclAST*> functions;
-  std::vector<std::unordered_map<std::string_view, LocalStmtAST*>> locals;
+  bool deepResolution;
+  std::unordered_map<std::string_view, FunctionDeclAST *> functions;
+  std::vector<std::unordered_map<std::string_view, LocalStmtAST *>> locals;
 };
 
 } // namespace lang

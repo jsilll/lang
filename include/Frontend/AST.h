@@ -48,6 +48,7 @@ struct ExprAST {
 enum class StmtASTKind {
   Expr,
   Local,
+  Return,
   Block,
 };
 
@@ -125,6 +126,12 @@ struct LocalStmtAST : public StmtAST {
   ExprAST *expr;
   LocalStmtAST(bool isConst, std::string_view ident, ExprAST *expr)
       : StmtAST(StmtASTKind::Local, ident), expr(expr) {}
+};
+
+struct ReturnStmtAST : public StmtAST {
+  ExprAST *expr;
+  ReturnStmtAST(std::string_view span, ExprAST *expr)
+      : StmtAST(StmtASTKind::Return, span), expr(expr) {}
 };
 
 struct BlockStmtAST : public StmtAST {

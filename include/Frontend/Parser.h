@@ -9,7 +9,6 @@
 #include "Token.h"
 
 #include <unordered_set>
-#include <vector>
 
 namespace lang {
 
@@ -46,9 +45,9 @@ private:
   void sync(TokenKind syncToken);
   void sync(const std::unordered_set<TokenKind> &syncSet);
 
-  Type* parseType();
-
   FunctionDeclAST *parseFunctionDeclAST();
+
+  Type* parseType();
 
   BlockStmtAST *parseBlockStmtAST();
 

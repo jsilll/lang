@@ -17,7 +17,7 @@ bool isAlnum(char c) { return isAlpha(c) || isDigit(c); }
 const std::unordered_map<std::string_view, lang::TokenKind> keywordToTokenKind =
     {{"fn", lang::TokenKind::KwFn},
      {"void", lang::TokenKind::KwVoid},
-     {"number", lang::TokenKind::Number},
+     {"number", lang::TokenKind::KwNumber},
      {"let", lang::TokenKind::KwLet},
      {"var", lang::TokenKind::KwVar},
      {"if", lang::TokenKind::KwIf},
