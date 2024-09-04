@@ -3,12 +3,14 @@
 #include <unordered_map>
 
 namespace {
+
 const std::unordered_map<lang::BinOpKind, std::string_view> binOpMap = {
     {lang::BinOpKind::Ne, "!="},
     {lang::BinOpKind::Le, "<="},
     {lang::BinOpKind::Ge, ">="},
     {lang::BinOpKind::Or, "||"},
 };
+
 } // namespace
 
 namespace lang {

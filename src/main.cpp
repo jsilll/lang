@@ -12,27 +12,41 @@
 
 namespace {
 
-enum class CompilerAction {
+enum class CompilerUntilStage {
+    None,
+    UntilLex,
+    UntilAST,
+};
+
+enum class CompilerEmitAction {
     None,
     EmitLex,
     EmitSrc,
-    EmitAst,
+    EmitAST,
 };
 
 const llvm::cl::opt<std::string>
     inputFilename(llvm::cl::Positional, llvm::cl::desc("<file>"),
                   llvm::cl::Required, llvm::cl::value_desc("filename"));
 
-const llvm::cl::opt<CompilerAction> compilerAction(
+const llvm::cl::opt<CompilerUntilStage> compilerUntilStage(
+    "until", llvm::cl::desc("Select the stage until which the compiler run"),
+    llvm::cl::values(clEnumValN(CompilerUntilStage::UntilLex, "lex",
+                                "Run the compiler until the lexing stage"),
+                     clEnumValN(CompilerUntilStage::UntilAST, "ast",
+                                "Run the compiler until the parsing stage")),
+    llvm::cl::init(CompilerUntilStage::None));
+
+const llvm::cl::opt<CompilerEmitAction> compilerEmitAction(
     "emit", llvm::cl::desc("Select the kind of output desired"),
     llvm::cl::values(
-        clEnumValN(CompilerAction::EmitLex, "lex",
+        clEnumValN(CompilerEmitAction::EmitLex, "lex",
                    "Dump the lexed tokens of the input file"),
-        clEnumValN(CompilerAction::EmitSrc, "src",
+        clEnumValN(CompilerEmitAction::EmitSrc, "src",
                    "Dump the original source code of the input file"),
-        clEnumValN(CompilerAction::EmitAst, "ast",
+        clEnumValN(CompilerEmitAction::EmitAST, "ast",
                    "Dump the abstract syntax tree of the input file")),
-    llvm::cl::init(CompilerAction::None));
+    llvm::cl::init(CompilerEmitAction::None));
 
 } // namespace
 
@@ -52,16 +66,15 @@ int main(int argc, char **argv) {
     lang::Lexer lexer(file.get()->getBuffer());
     const auto lexResult = lexer.lexAll();
 
-    if (lexResult.tokens.empty()) {
-        llvm::errs() << "Error: empty file\n";
-        return EXIT_FAILURE;
-    }
-
-    if (compilerAction == CompilerAction::EmitLex) {
+    if (compilerEmitAction == CompilerEmitAction::EmitLex) {
         for (const auto &token : lexResult.tokens) {
             llvm::outs() << token.toString() << "\n";
         }
-        return EXIT_SUCCESS;
+    }
+
+    if (lexResult.tokens.empty()) {
+        llvm::errs() << "Error: empty file\n";
+        return EXIT_FAILURE;
     }
 
     if (!lexResult.errors.empty()) {
@@ -69,30 +82,42 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    if (compilerUntilStage == CompilerUntilStage::UntilLex) {
+        return EXIT_SUCCESS;
+    }
+
     lang::Arena arena(lang::kiloBytes(64));
     lang::TypeContext tcx(arena);
 
+    lang::ASTPrinter astPrinter(llvm::outs());
     lang::Parser parser(tcx, arena, lexResult.tokens);
+
     const auto parseResult = parser.parseModuleAST();
     DEBUG("%lu allocations in %lu bytes", arena.totalAllocations(),
           arena.totalAllocated());
+
+    if (compilerEmitAction == CompilerEmitAction::EmitSrc) {
+        // TODO: Implement
+    }
+
+    if (compilerEmitAction == CompilerEmitAction::EmitAST) {
+        astPrinter.visit(*parseResult.module);
+    }
 
     if (!parseResult.errors.empty()) {
         reportErrors(source, parseResult.errors);
         return EXIT_FAILURE;
     }
 
-    if (compilerAction == CompilerAction::EmitSrc) {
-        // TODO: Implement this
+    if (compilerUntilStage == CompilerUntilStage::UntilAST) {
         return EXIT_SUCCESS;
     }
 
     lang::Resolver resolver;
     const auto resolveResult = resolver.resolveModuleAST(*parseResult.module);
 
-    if (compilerAction == CompilerAction::EmitAst) {
-        lang::ASTPrinter printer(llvm::outs());
-        printer.visit(*parseResult.module);
+    if (compilerEmitAction == CompilerEmitAction::EmitAST) {
+        astPrinter.visit(*parseResult.module);
     }
 
     if (!resolveResult.errors.empty()) {
