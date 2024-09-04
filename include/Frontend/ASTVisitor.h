@@ -15,22 +15,25 @@ protected:
   void visit(MaybeConst<ExprAST> &node) {
     switch (node.kind) {
     case ExprASTKind::Number:
-      derived().visit(static_cast<MaybeConst<NumberExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<NumberExprAST> &>(node));
       break;
     case ExprASTKind::Identifier:
-      derived().visit(static_cast<MaybeConst<IdentifierExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<IdentifierExprAST> &>(node));
       break;
     case ExprASTKind::Unary:
-      derived().visit(static_cast<MaybeConst<UnaryExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<UnaryExprAST> &>(node));
       break;
     case ExprASTKind::Binary:
-      derived().visit(static_cast<MaybeConst<BinaryExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<BinaryExprAST> &>(node));
       break;
     case ExprASTKind::Call:
-      derived().visit(static_cast<MaybeConst<CallExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<CallExprAST> &>(node));
       break;
     case ExprASTKind::Index:
-      derived().visit(static_cast<MaybeConst<IndexExprAST>&>(node));
+      derived().visit(static_cast<MaybeConst<IndexExprAST> &>(node));
+      break;
+    case ExprASTKind::Grouped:
+      derived().visit(static_cast<MaybeConst<GroupedExprAST> &>(node));
       break;
     }
   }
@@ -38,16 +41,16 @@ protected:
   void visit(MaybeConst<StmtAST> &node) {
     switch (node.kind) {
     case StmtASTKind::Expr:
-      derived().visit(static_cast<MaybeConst<ExprStmtAST>&>(node));
+      derived().visit(static_cast<MaybeConst<ExprStmtAST> &>(node));
       break;
     case StmtASTKind::Local:
-      derived().visit(static_cast<MaybeConst<LocalStmtAST>&>(node));
+      derived().visit(static_cast<MaybeConst<LocalStmtAST> &>(node));
       break;
     case StmtASTKind::Return:
-      derived().visit(static_cast<MaybeConst<ReturnStmtAST>&>(node));
+      derived().visit(static_cast<MaybeConst<ReturnStmtAST> &>(node));
       break;
     case StmtASTKind::Block:
-      derived().visit(static_cast<MaybeConst<BlockStmtAST>&>(node));
+      derived().visit(static_cast<MaybeConst<BlockStmtAST> &>(node));
       break;
     }
   }
@@ -55,7 +58,7 @@ protected:
   void visit(MaybeConst<DeclAST> &node) {
     switch (node.kind) {
     case DeclASTKind::Function:
-      derived().visit(static_cast<MaybeConst<FunctionDeclAST>&>(node));
+      derived().visit(static_cast<MaybeConst<FunctionDeclAST> &>(node));
       break;
     }
   }
@@ -64,8 +67,7 @@ private:
   Derived &derived() { return static_cast<Derived &>(*this); }
 };
 
-template <typename Derived>
-using ConstASTVisitor = ASTVisitor<Derived, true>;
+template <typename Derived> using ConstASTVisitor = ASTVisitor<Derived, true>;
 
 template <typename Derived>
 using MutableASTVisitor = ASTVisitor<Derived, false>;

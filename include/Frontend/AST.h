@@ -37,6 +37,7 @@ enum class ExprASTKind {
   Binary,
   Call,
   Index,
+  Grouped,
 };
 
 struct ExprAST {
@@ -113,6 +114,12 @@ struct IndexExprAST : public ExprAST {
       : ExprAST(ExprASTKind::Index, span), base(base), index(index) {}
 };
 
+struct GroupedExprAST : public ExprAST {
+  ExprAST *expr;
+  GroupedExprAST(std::string_view span, ExprAST *expr)
+      : ExprAST(ExprASTKind::Grouped, span), expr(expr) {}
+};
+
 // === Statements ===
 
 struct ExprStmtAST : public StmtAST {
@@ -123,9 +130,11 @@ struct ExprStmtAST : public StmtAST {
 
 struct LocalStmtAST : public StmtAST {
   bool isConst;
+  Type *type;
   ExprAST *expr;
-  LocalStmtAST(bool isConst, std::string_view ident, ExprAST *expr)
-      : StmtAST(StmtASTKind::Local, ident), isConst(isConst), expr(expr) {}
+  LocalStmtAST(bool isConst, std::string_view ident, Type *type, ExprAST *expr)
+      : StmtAST(StmtASTKind::Local, ident), isConst(isConst), type(type),
+        expr(expr) {}
 };
 
 struct ReturnStmtAST : public StmtAST {

@@ -22,12 +22,6 @@ struct Identation {
 
 namespace lang {
 
-void ASTPrinter::ident() {
-  for (int i = 0; i < level; ++i) {
-    os << "  ";
-  }
-}
-
 void ASTPrinter::visit(const ModuleAST &node) {
   INDENT();
   os << "ModuleAST: " << node.ident << '\n';
@@ -122,6 +116,18 @@ void ASTPrinter::visit(const IndexExprAST &node) {
   os << "IndexExprAST\n";
   ASTVisitor::visit(*node.base);
   ASTVisitor::visit(*node.index);
+}
+
+void ASTPrinter::visit(const GroupedExprAST &node) {
+  INDENT();
+  os << "GroupedExprAST\n";
+  ASTVisitor::visit(*node.expr);
+}
+
+void ASTPrinter::ident() {
+  for (int i = 0; i < level; ++i) {
+    os << "  ";
+  }
 }
 
 } // namespace lang

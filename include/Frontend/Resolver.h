@@ -56,6 +56,8 @@ private:
 
   void visit(IndexExprAST &node);
 
+  void visit(GroupedExprAST &node);
+
   LocalStmtAST *lookupLocal(std::string_view ident) const;
 
   bool deepResolution;

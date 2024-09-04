@@ -14,8 +14,8 @@ namespace {
 enum class CompilerAction {
   None,
   EmitLex,
-  EmitAst,
   EmitSrc,
+  EmitAst,
 };
 
 const llvm::cl::opt<std::string>
@@ -27,10 +27,10 @@ const llvm::cl::opt<CompilerAction> compilerAction(
     llvm::cl::values(
         clEnumValN(CompilerAction::EmitLex, "lex",
                    "Dump the lexed tokens of the input file"),
-        clEnumValN(CompilerAction::EmitAst, "ast",
-                   "Dump the abstract syntax tree of the input file"),
         clEnumValN(CompilerAction::EmitSrc, "src",
-                   "Dump the original source code of the input file")),
+                   "Dump the original source code of the input file"),
+        clEnumValN(CompilerAction::EmitAst, "ast",
+                   "Dump the abstract syntax tree of the input file")),
     llvm::cl::init(CompilerAction::None));
 
 } // namespace
@@ -74,10 +74,9 @@ int main(int argc, char **argv) {
   lang::Parser parser(tcx, arena, lexResult.tokens);
   const auto parseResult = parser.parseModuleAST();
 
-  if (compilerAction == CompilerAction::EmitAst) {
-    llvm::outs() << "== AST ==\n";
-    lang::ASTPrinter printer(llvm::outs());
-    printer.visit(*parseResult.module);
+  if (!parseResult.errors.empty()) {
+    reportErrors(source, parseResult.errors);
+    return EXIT_FAILURE;
   }
 
   if (compilerAction == CompilerAction::EmitSrc) {
@@ -85,22 +84,16 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
   }
 
-  if (!parseResult.errors.empty()) {
-    reportErrors(source, parseResult.errors);
-    return EXIT_FAILURE;
-  }
-
   lang::Resolver resolver;
   const auto resolveResult = resolver.resolveModuleAST(*parseResult.module);
+
+  if (compilerAction == CompilerAction::EmitAst) {
+    lang::ASTPrinter printer(llvm::outs());
+    printer.visit(*parseResult.module);
+  }
 
   if (!resolveResult.errors.empty()) {
     reportErrors(source, resolveResult.errors);
     return EXIT_FAILURE;
-  }
-
-  if (compilerAction == CompilerAction::EmitAst) {
-    llvm::outs() << "== Resolved AST ==\n";
-    lang::ASTPrinter printer(llvm::outs());
-    printer.visit(*parseResult.module);
   }
 }

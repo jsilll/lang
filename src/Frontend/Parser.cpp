@@ -99,28 +99,17 @@ const Token *Parser::expect(TokenKind kind) {
 }
 
 void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
-  // Syncing with first token in syncSet
-  while (cur != end) {
-    if (syncSet.find(cur->kind) != syncSet.end()) {
-      break;
-    }
-    ++cur;
-  }
-
+  cur = std::find_if(cur, end, [&syncSet](const Token &token) {
+    return syncSet.find(token.kind) != syncSet.end();
+  });
   // Return if we are at end or end - 1
   if (cur == end || cur + 1 == end) {
     return;
   }
-
   ++cur;
-
-  // Skip all the following tokens that are in the syncSet
-  while (cur != end) {
-    if (syncSet.find(cur->kind) != syncSet.end()) {
-      break;
-    }
-    ++cur;
-  }
+  cur = std::find_if(cur, end, [&syncSet](const Token &token) {
+    return syncSet.find(token.kind) != syncSet.end();
+  });
 }
 
 ParseResult Parser::parseModuleAST() {
@@ -258,24 +247,31 @@ LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
   const Token *ident = expect(TokenKind::Ident);
   RETURN_IF_NULL(ident);
 
-  EXPECT(TokenKind::Colon);
-
-  Type *type = parseTypeAnnotation();
-  RETURN_IF_NULL(type);
+  Type *type = nullptr;
 
   const Token *tok = peek();
+  RETURN_IF_NULL(tok);
+
+  if (tok->kind == TokenKind::Colon) {
+    ++cur;
+
+    type = parseTypeAnnotation();
+    RETURN_IF_NULL(type);
+  }
+
+  ExprAST *expr = nullptr;
+
+  tok = peek();
   RETURN_IF_NULL(tok);
 
   if (tok->kind == TokenKind::Equal) {
     ++cur;
 
-    ExprAST *expr = parseExprAST();
+    expr = parseExprAST();
     RETURN_IF_NULL(expr);
-
-    return arena->make<LocalStmtAST>(isConst, ident->span, expr);
   }
 
-  return arena->make<LocalStmtAST>(isConst, ident->span, nullptr);
+  return arena->make<LocalStmtAST>(isConst, ident->span, type, expr);
 }
 
 ExprStmtAST *Parser::parseExprStmtAST() {
@@ -346,6 +342,11 @@ ExprAST *Parser::parsePrimaryExprAST() {
     expr = parsePrimaryExprAST();
     RETURN_IF_NULL(expr);
     return arena->make<UnaryExprAST>(tok->span, UnOpKind::Neg, expr);
+  case TokenKind::LParen:
+    expr = parseExprAST();
+    RETURN_IF_NULL(expr);
+    EXPECT(TokenKind::RParen);
+    return arena->make<GroupedExprAST>(tok->span, expr);
   default:
     break;
   }

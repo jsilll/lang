@@ -36,6 +36,8 @@ public:
 
   void visit(const IndexExprAST &node);
 
+  void visit(const GroupedExprAST &node);
+
 private:
   int level;
   llvm::raw_ostream &os;

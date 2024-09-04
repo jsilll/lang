@@ -95,6 +95,8 @@ void Resolver::visit(IndexExprAST &node) {
   ASTVisitor::visit(*node.index);
 }
 
+void Resolver::visit(GroupedExprAST &node) { ASTVisitor::visit(*node.expr); }
+
 LocalStmtAST *Resolver::lookupLocal(std::string_view ident) const {
   for (auto it = locals.rbegin(); it != locals.rend(); ++it) {
     const auto &locals = *it;
