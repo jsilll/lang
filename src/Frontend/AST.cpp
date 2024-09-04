@@ -1,5 +1,16 @@
 #include "Frontend/AST.h"
 
+#include <unordered_map>
+
+namespace {
+const std::unordered_map<lang::BinOpKind, std::string_view> binOpMap = {
+    {lang::BinOpKind::Ne, "!="},
+    {lang::BinOpKind::Le, "<="},
+    {lang::BinOpKind::Ge, ">="},
+    {lang::BinOpKind::Or, "||"},
+};
+} // namespace
+
 namespace lang {
 
 std::string unOpKindToString(UnOpKind kind) {
@@ -13,20 +24,12 @@ std::string binOpKindToString(BinOpKind kind) {
         return std::string(1, static_cast<char>(kind));
     }
 
-    switch (kind) {
-    case BinOpKind::Ne:
-        return "!=";
-    case BinOpKind::Le:
-        return "<=";
-    case BinOpKind::Ge:
-        return ">=";
-    case BinOpKind::And:
-        return "&&";
-    case BinOpKind::Or:
-        return "||";
-    default:
+    const auto it = binOpMap.find(kind);
+    if (it == binOpMap.end()) {
         return "an unknown binary operator";
     }
+
+    return std::string(it->second);
 }
 
 } // namespace lang

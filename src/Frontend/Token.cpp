@@ -1,6 +1,32 @@
 #include "Frontend/Token.h"
 
 #include <sstream>
+#include <unordered_map>
+
+namespace {
+
+const std::unordered_map<lang::TokenKind, std::string_view> tokenKindMap = {
+    {lang::TokenKind::BangEqual, "'!='"},
+    {lang::TokenKind::AmpAmp, "'&&'"},
+    {lang::TokenKind::LessEqual, "'<='"},
+    {lang::TokenKind::EqualEqual, "'=='"},
+    {lang::TokenKind::GreaterEqual, "'>='"},
+    {lang::TokenKind::PipePipe, "||"},
+    {lang::TokenKind::KwFn, "'fn'"},
+    {lang::TokenKind::KwVoid, "'void'"},
+    {lang::TokenKind::KwNumber, "'number'"},
+    {lang::TokenKind::KwLet, "'let'"},
+    {lang::TokenKind::KwVar, "'var'"},
+    {lang::TokenKind::KwIf, "'if'"},
+    {lang::TokenKind::KwElse, "'else'"},
+    {lang::TokenKind::KwWhile, "'while'"},
+    {lang::TokenKind::KwReturn, "'return'"},
+    {lang::TokenKind::Ident, "an identifier"},
+    {lang::TokenKind::Number, "a number"},
+    {lang::TokenKind::Comment, "a comment"},
+};
+
+} // namespace
 
 namespace lang {
 
@@ -11,46 +37,12 @@ std::string tokenKindToString(TokenKind kind) {
         return "'" + std::string(1, static_cast<char>(kindInt)) + "'";
     }
 
-    switch (kind) {
-    case TokenKind::BangEqual:
-        return "'!='";
-    case TokenKind::AmpAmp:
-        return "'&&'";
-    case TokenKind::LessEqual:
-        return "'<='";
-    case TokenKind::EqualEqual:
-        return "'=='";
-    case TokenKind::GreaterEqual:
-        return "'>='";
-    case TokenKind::PipePipe:
-        return "||";
-    case TokenKind::KwFn:
-        return "'fn'";
-    case TokenKind::KwVoid:
-        return "'void'";
-    case TokenKind::KwNumber:
-        return "'number'";
-    case TokenKind::KwLet:
-        return "'let'";
-    case TokenKind::KwVar:
-        return "'var'";
-    case TokenKind::KwIf:
-        return "'if'";
-    case TokenKind::KwElse:
-        return "'else'";
-    case TokenKind::KwWhile:
-        return "'while'";
-    case TokenKind::KwReturn:
-        return "'return'";
-    case TokenKind::Ident:
-        return "an identifier";
-    case TokenKind::Number:
-        return "a number";
-    case TokenKind::Comment:
-        return "a comment";
-    default:
+    const auto it = tokenKindMap.find(kind);
+    if (it == tokenKindMap.end()) {
         return "an unknown token";
     }
+
+    return std::string(it->second);
 }
 
 std::string Token::toString() const {
