@@ -1,6 +1,6 @@
 // Lazy Initialization
 //
-// Data-flow analysis based support for detecting lazily 
+// Data-flow analysis based support for detecting lazily
 // initialized and uninitialized variables.
 fn dataFlowAnalysis(n: number): void {
     let uninit: number;
@@ -11,3 +11,5 @@ fn dataFlowAnalysis(n: number): void {
 
     println(uninit);
 }
+
+fn println() : void {}

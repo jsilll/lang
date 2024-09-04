@@ -10,31 +10,33 @@
 namespace lang {
 
 enum class LexErrorKind {
-  InvalidCharacter,
+    InvalidCharacter,
 };
 
 struct LexError {
-  LexErrorKind kind;
-  std::string_view span;
-  PrettyError toPretty() const;
+    LexErrorKind kind;
+    std::string_view span;
+    LexError(LexErrorKind kind, std::string_view span)
+        : kind(kind), span(span) {}
+    PrettyError toPretty() const;
 };
 
 struct LexResult {
-  std::vector<Token> tokens;
-  std::vector<LexError> errors;
+    std::vector<Token> tokens;
+    std::vector<LexError> errors;
 };
 
 class Lexer {
-public:
-  explicit Lexer(std::string_view buffer) : idx(0), buffer(buffer) {}
+  public:
+    explicit Lexer(std::string_view buffer) : idx(0), buffer(buffer) {}
 
-  LexResult lexAll(bool includeComments = false);
+    LexResult lexAll(bool includeComments = false);
 
-private:
-  Token lexAlt(char c, TokenKind altKind, TokenKind defaultKind);
+  private:
+    Token lexAlt(char c, TokenKind altKind, TokenKind defaultKind);
 
-  size_t idx;
-  std::string_view buffer;
+    size_t idx;
+    std::string_view buffer;
 };
 
 } // namespace lang

@@ -13,56 +13,60 @@
 namespace lang {
 
 enum class ParseErrorKind {
-  UnexpectedEOF,
-  UnexpectedToken,
-  ExpectedTypeAnnotation,
-  ExpectedPrimaryExpression,
+    UnexpectedEOF,
+    UnexpectedToken,
+    ExpectedTypeAnnotation,
+    ExpectedPrimaryExpression,
 };
 
 struct ParseError {
-  ParseErrorKind kind;
-  std::string_view span;
-  TokenKind expected;
-  PrettyError toPretty() const;
+    ParseErrorKind kind;
+    std::string_view span;
+    TokenKind expected;
+    ParseError(ParseErrorKind kind, std::string_view span, TokenKind expected)
+        : kind(kind), span(span), expected(expected) {}
+    PrettyError toPretty() const;
 };
 
 struct ParseResult {
-  ModuleAST *module;
-  std::vector<ParseError> errors;
+    ModuleAST *module;
+    std::vector<ParseError> errors;
 };
 
 class Parser {
-public:
-  Parser(TypeContext &tcx, Arena &arena, const std::vector<Token> &tokens)
-      : tcx(&tcx), arena(&arena), cur(tokens.begin()), end(tokens.end()) {}
+  public:
+    Parser(TypeContext &tcx, Arena &arena, const std::vector<Token> &tokens)
+        : tcx(&tcx), arena(&arena), cur(tokens.begin()), end(tokens.end()) {}
 
-  ParseResult parseModuleAST();
+    ParseResult parseModuleAST();
 
-private:
-  const Token *peek();
-  const Token *next();
-  const Token *expect(TokenKind kind);
-  void sync(const std::unordered_set<TokenKind> &syncSet);
+  private:
+    const Token *peek();
+    const Token *next();
+    const Token *expect(TokenKind kind);
+    void sync(const std::unordered_set<TokenKind> &syncSet);
 
-  FunctionDeclAST *parseFunctionDeclAST();
+    FunctionDeclAST *parseFunctionDeclAST();
 
-  Type* parseTypeAnnotation();
+    Type *parseTypeAnnotation();
 
-  BlockStmtAST *parseBlockStmtAST();
+    BlockStmtAST *parseBlockStmtAST();
 
-  LocalStmtAST *parseLocalStmtAST(bool isConst);
+    LocalStmtAST *parseLocalStmtAST(bool isConst);
 
-  ExprStmtAST *parseExprStmtAST();
+    IfStmtAST *parseIfStmtAST();
 
-  ExprAST *parseExprAST(int prec = 0);
+    WhileStmtAST *parseWhileStmtAST();
 
-  ExprAST *parsePrimaryExprAST();
+    ExprAST *parseExprAST(int prec = 0);
 
-  TypeContext *tcx;
-  Arena *arena;
-  std::vector<Token>::const_iterator cur;
-  std::vector<Token>::const_iterator end;
-  std::vector<ParseError> errors;
+    ExprAST *parsePrimaryExprAST();
+
+    TypeContext *tcx;
+    Arena *arena;
+    std::vector<Token>::const_iterator cur;
+    std::vector<Token>::const_iterator end;
+    std::vector<ParseError> errors;
 };
 
 } // namespace lang

@@ -8,21 +8,21 @@
 namespace lang {
 
 struct SourceLocation {
-  std::size_t line;
-  std::size_t column;
-  std::string_view filename;
-  std::string_view lineText;
+    std::size_t line;
+    std::size_t column;
+    std::string_view filename;
+    std::string_view lineText;
 };
 
 struct SourceFile {
-public:
-  SourceFile(std::string_view filename, llvm::StringRef buffer);
+  public:
+    SourceFile(std::string_view filename, llvm::StringRef buffer);
 
-  SourceLocation getLocation(std::string_view span) const;
+    SourceLocation getLocation(std::string_view span) const;
 
-private:
-  std::string_view filename;
-  std::vector<std::string_view> lines;
+  private:
+    std::string_view filename;
+    std::vector<std::string_view> lines;
 };
 
 } // namespace lang
