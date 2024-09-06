@@ -180,9 +180,12 @@ struct BlockStmtAST : public StmtAST {
 
 struct IfStmtAST : public StmtAST {
     ExprAST *cond;
-    BlockStmtAST *body;
-    IfStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *body)
-        : StmtAST(StmtASTKind::If, span), cond(cond), body(body) {}
+    BlockStmtAST *thenBranch;
+    StmtAST *elseBranch;
+    IfStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *thenBranch,
+              StmtAST *elseBranch)
+        : StmtAST(StmtASTKind::If, span), cond(cond), thenBranch(thenBranch),
+          elseBranch(elseBranch) {}
 };
 
 struct WhileStmtAST : public StmtAST {

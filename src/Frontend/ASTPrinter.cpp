@@ -92,7 +92,10 @@ void ASTPrinter::visit(const IfStmtAST &node) {
     INDENT();
     os << "IfStmtAST\n";
     ASTVisitor::visit(*node.cond);
-    visit(*node.body);
+    visit(*node.thenBranch);
+    if (node.elseBranch != nullptr) {
+        ASTVisitor::visit(*node.elseBranch);
+    }
 }
 
 void ASTPrinter::visit(const WhileStmtAST &node) {

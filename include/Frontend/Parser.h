@@ -58,6 +58,8 @@ class Parser {
 
     WhileStmtAST *parseWhileStmtAST();
 
+    StmtAST *parseExprStmtOrAssignStmtAST();
+
     ExprAST *parseExprAST(int prec = 0);
 
     ExprAST *parsePrimaryExprAST();

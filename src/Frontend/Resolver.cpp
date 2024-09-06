@@ -69,7 +69,10 @@ void Resolver::visit(BlockStmtAST &node) {
 
 void Resolver::visit(IfStmtAST &node) {
     ASTVisitor::visit(*node.cond);
-    visit(*node.body);
+    visit(*node.thenBranch);
+    if (node.elseBranch != nullptr) {
+        ASTVisitor::visit(*node.elseBranch);
+    }
 }
 
 void Resolver::visit(WhileStmtAST &node) {

@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    lang::Arena arena(lang::kiloBytes(64));
+    lang::Arena arena(lang::kiloBytes(32));
     lang::TypeContext tcx(arena);
 
     lang::ASTPrinter astPrinter(llvm::outs());

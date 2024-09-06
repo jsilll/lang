@@ -120,10 +120,12 @@ void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
     cur = std::find_if(cur, end, [&syncSet](const Token &token) {
         return syncSet.find(token.kind) != syncSet.end();
     });
+
     // Return if we are at end or end - 1
     if (cur == end || cur + 1 == end) {
         return;
     }
+
     ++cur;
     cur = std::find_if(cur, end, [&syncSet](const Token &token) {
         return syncSet.find(token.kind) != syncSet.end();
@@ -137,20 +139,23 @@ ParseResult Parser::parseModuleAST() {
     const Token *tok = peek();
     while (tok != nullptr) {
         switch (tok->kind) {
-        case TokenKind::KwFn: {
+        case TokenKind::KwFn:
             decl = parseFunctionDeclAST();
+
             if (decl != nullptr) {
                 decls.emplace_back(arena, decl);
             } else {
                 sync(declLevelSyncSet);
             }
-        } break;
+
+            break;
+
         default:
+            ++cur;
             errors.emplace_back(ParseErrorKind::UnexpectedToken, tok->span,
                                 TokenKind::KwFn);
-            ++cur;
-            break;
         }
+
         tok = peek();
     }
 
@@ -210,8 +215,9 @@ Type *Parser::parseTypeAnnotation() {
     default:
         errors.emplace_back(ParseErrorKind::ExpectedTypeAnnotation, tok->span,
                             TokenKind::Amp);
-        return nullptr;
     }
+
+    return nullptr;
 }
 
 BlockStmtAST *Parser::parseBlockStmtAST() {
@@ -227,11 +233,13 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
         case TokenKind::LBrace:
             stmt = parseBlockStmtAST();
             break;
+
         case TokenKind::KwBreak:
             ++cur;
             stmt = arena->make<BreakStmtAST>(tok->span);
             EXPECT(TokenKind::Semicolon);
             break;
+
         case TokenKind::KwReturn:
             ++cur;
             stmt = arena->make<ReturnStmtAST>(
@@ -240,42 +248,37 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
                                : nullptr);
             EXPECT(TokenKind::Semicolon);
             break;
+
         case TokenKind::KwLet:
-        case TokenKind::KwVar:
             ++cur;
-            stmt = parseLocalStmtAST(tok->kind == TokenKind::KwLet);
+
+            stmt = parseLocalStmtAST(true);
             BREAK_IF_NULL(stmt);
+
             EXPECT(TokenKind::Semicolon);
             break;
+
+        case TokenKind::KwVar:
+            ++cur;
+
+            stmt = parseLocalStmtAST(false);
+            BREAK_IF_NULL(stmt);
+
+            EXPECT(TokenKind::Semicolon);
+            break;
+
         case TokenKind::KwIf:
             stmt = parseIfStmtAST();
             break;
+
         case TokenKind::KwWhile:
             stmt = parseWhileStmtAST();
             break;
-        default: {
-            ExprAST *lhs = parseExprAST();
-            BREAK_IF_NULL(lhs);
 
-            const Token *tok = next();
-            BREAK_IF_NULL(tok);
+        default:
+            stmt = parseExprStmtOrAssignStmtAST();
+        }
 
-            switch (tok->kind) {
-            case TokenKind::Semicolon:
-                stmt = arena->make<ExprStmtAST>(tok->span, lhs);
-                break;
-            case TokenKind::Equal: {
-                ExprAST *rhs = parseExprAST();
-                BREAK_IF_NULL(rhs);
-                EXPECT(TokenKind::Semicolon);
-                stmt = arena->make<AssignStmtAST>(tok->span, lhs, rhs);
-            } break;
-            default:
-                errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,
-                                    tok->span, TokenKind::Amp);
-            }
-        }
-        }
         if (stmt != nullptr) {
             body.emplace_back(arena, stmt);
             stmt = nullptr;
@@ -283,6 +286,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
             sync(stmtLevelSyncSet);
             next();
         }
+
         tok = peek();
     }
 
@@ -329,10 +333,26 @@ IfStmtAST *Parser::parseIfStmtAST() {
     ExprAST *cond = parseExprAST();
     RETURN_IF_NULL(cond);
 
-    BlockStmtAST *body = parseBlockStmtAST();
-    RETURN_IF_NULL(body);
+    BlockStmtAST *thenBranch = parseBlockStmtAST();
+    RETURN_IF_NULL(thenBranch);
 
-    return arena->make<IfStmtAST>(tok->span, cond, body);
+    StmtAST *elseBranch = nullptr;
+
+    const Token *elseToken = peek();
+    if (elseToken != nullptr && elseToken->kind == TokenKind::KwElse) {
+        ++cur;
+
+        const Token *ifToken = peek();
+        if (ifToken != nullptr && ifToken->kind == TokenKind::KwIf) {
+            elseBranch = parseIfStmtAST();
+        } else {
+            elseBranch = parseBlockStmtAST();
+        }
+
+        RETURN_IF_NULL(elseBranch);
+    }
+
+    return arena->make<IfStmtAST>(tok->span, cond, thenBranch, elseBranch);
 }
 
 WhileStmtAST *Parser::parseWhileStmtAST() {
@@ -346,6 +366,33 @@ WhileStmtAST *Parser::parseWhileStmtAST() {
     RETURN_IF_NULL(body);
 
     return arena->make<WhileStmtAST>(tok->span, cond, body);
+}
+
+StmtAST *Parser::parseExprStmtOrAssignStmtAST() {
+    ExprAST *lhs = parseExprAST();
+    RETURN_IF_NULL(lhs);
+
+    const Token *tok = next();
+    RETURN_IF_NULL(tok);
+
+    switch (tok->kind) {
+    case TokenKind::Semicolon:
+        return arena->make<ExprStmtAST>(tok->span, lhs);
+
+    case TokenKind::Equal: {
+        ExprAST *rhs = parseExprAST();
+        RETURN_IF_NULL(rhs);
+
+        EXPECT(TokenKind::Semicolon);
+        return arena->make<AssignStmtAST>(tok->span, lhs, rhs);
+
+    } break;
+    default:
+        errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,
+                            tok->span, TokenKind::Amp);
+    }
+
+    return nullptr;
 }
 
 ExprAST *Parser::parseExprAST(int prec) {
@@ -365,6 +412,7 @@ ExprAST *Parser::parseExprAST(int prec) {
 
             EXPECT(TokenKind::RParen);
         } break;
+
         case TokenKind::LBracket: {
             ++cur;
 
@@ -375,6 +423,7 @@ ExprAST *Parser::parseExprAST(int prec) {
 
             EXPECT(TokenKind::RBracket);
         } break;
+
         default:
             const auto it = binOpMap.find(tok->kind);
             if (it == binOpMap.end()) {
@@ -387,6 +436,7 @@ ExprAST *Parser::parseExprAST(int prec) {
             lhs = arena->make<BinaryExprAST>(tok->span, it->second.bind, lhs,
                                              parseExprAST(it->second.precRhs));
         }
+
         tok = peek();
     }
 
@@ -400,23 +450,28 @@ ExprAST *Parser::parsePrimaryExprAST() {
     switch (tok->kind) {
     case TokenKind::Number:
         return arena->make<NumberExprAST>(tok->span);
+
     case TokenKind::Ident:
         return arena->make<IdentifierExprAST>(tok->span);
+
     case TokenKind::Minus:
         expr = parsePrimaryExprAST();
         RETURN_IF_NULL(expr);
+
         return arena->make<UnaryExprAST>(tok->span, UnOpKind::Neg, expr);
+
     case TokenKind::LParen:
         expr = parseExprAST();
         RETURN_IF_NULL(expr);
-        EXPECT(TokenKind::RParen);
-        return arena->make<GroupedExprAST>(tok->span, expr);
-    default:
-        break;
-    }
 
-    errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression, tok->span,
-                        TokenKind::Amp);
+        EXPECT(TokenKind::RParen);
+
+        return arena->make<GroupedExprAST>(tok->span, expr);
+
+    default:
+        errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,
+                            tok->span, TokenKind::Amp);
+    }
 
     return nullptr;
 }
