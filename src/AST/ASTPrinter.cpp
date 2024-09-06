@@ -1,5 +1,4 @@
-#include "Frontend/ASTPrinter.h"
-#include "Frontend/AST.h"
+#include "AST/ASTPrinter.h"
 
 namespace {
 

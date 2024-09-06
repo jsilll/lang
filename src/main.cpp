@@ -5,10 +5,13 @@
 #include "Support/Reporting.h"
 #include "Support/SourceFile.h"
 
-#include "Frontend/ASTPrinter.h"
-#include "Frontend/Lexer.h"
-#include "Frontend/Parser.h"
-#include "Frontend/Resolver.h"
+#include "AST/ASTPrinter.h"
+
+#include "Lex/Lexer.h"
+
+#include "Parse/Parser.h"
+
+#include "Sema/Resolver.h"
 
 namespace {
 

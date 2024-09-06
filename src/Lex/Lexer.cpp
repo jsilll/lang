@@ -1,4 +1,4 @@
-#include "Frontend/Lexer.h"
+#include "Lex/Lexer.h"
 
 #include <unordered_map>
 

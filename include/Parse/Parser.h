@@ -5,8 +5,9 @@
 
 #include "Support/Reporting.h"
 
-#include "AST.h"
-#include "Token.h"
+#include "AST/AST.h"
+
+#include "Lex/Token.h"
 
 #include <unordered_set>
 

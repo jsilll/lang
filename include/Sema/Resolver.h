@@ -1,8 +1,8 @@
 #ifndef LANG_RESOLVER_H
 #define LANG_RESOLVER_H
 
-#include "Frontend/AST.h"
-#include "Frontend/ASTVisitor.h"
+#include "AST/AST.h"
+#include "AST/ASTVisitor.h"
 
 #include "Support/Reporting.h"
 

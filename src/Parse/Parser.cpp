@@ -1,7 +1,4 @@
-#include "Frontend/Parser.h"
-
-#include "Frontend/AST.h"
-#include "Frontend/Token.h"
+#include "Parse/Parser.h"
 
 #include <unordered_map>
 

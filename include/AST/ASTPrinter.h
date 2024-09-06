@@ -1,10 +1,9 @@
 #ifndef LANG_AST_PRINTER_H
 #define LANG_AST_PRINTER_H
 
-#include "llvm/Support/raw_ostream.h"
+#include "AST/ASTVisitor.h"
 
-#include "ASTVisitor.h"
-#include "Frontend/AST.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace lang {
 

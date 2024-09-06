@@ -1,4 +1,4 @@
-#include "Frontend/Resolver.h"
+#include "Sema/Resolver.h"
 
 #include <cassert>
 

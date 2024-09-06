@@ -1,4 +1,4 @@
-#include "Frontend/Token.h"
+#include "Lex/Token.h"
 
 #include <sstream>
 #include <unordered_map>

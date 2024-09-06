@@ -3,7 +3,7 @@
 
 #include "ADT/List.h"
 
-#include "Type.h"
+#include "AST/Type.h"
 
 #include <string_view>
 #include <variant>

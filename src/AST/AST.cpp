@@ -1,4 +1,4 @@
-#include "Frontend/AST.h"
+#include "AST/AST.h"
 
 #include <unordered_map>
 
