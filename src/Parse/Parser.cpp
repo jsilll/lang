@@ -156,7 +156,7 @@ ParseResult Parser::parseModuleAST() {
         tok = peek();
     }
 
-    return {arena->make<ModuleAST>("main", decls), std::move(errors)};
+    return {arena->alloc<ModuleAST>("main", decls), std::move(errors)};
 }
 
 FunctionDeclAST *Parser::parseFunctionDeclAST() {
@@ -197,7 +197,7 @@ FunctionDeclAST *Parser::parseFunctionDeclAST() {
     BlockStmtAST *body = parseBlockStmtAST();
     RETURN_IF_NULL(body);
 
-    return arena->make<FunctionDeclAST>(ident->span, params, type, body);
+    return arena->alloc<FunctionDeclAST>(ident->span, params, type, body);
 }
 
 Type *Parser::parseTypeAnnotation() {
@@ -206,9 +206,9 @@ Type *Parser::parseTypeAnnotation() {
 
     switch (tok->kind) {
     case TokenKind::KwVoid:
-        return tcx->getTyVoid();
+        return typeCtx->getTypeVoid();
     case TokenKind::KwNumber:
-        return tcx->getTyNumber();
+        return typeCtx->getTypeNumber();
     default:
         errors.emplace_back(ParseErrorKind::ExpectedTypeAnnotation, tok->span,
                             TokenKind::Amp);
@@ -221,7 +221,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
     const Token *lBrace = expect(TokenKind::LBrace);
     RETURN_IF_NULL(lBrace);
 
-    List<StmtAST *> body;
+    List<StmtAST *> stmts;
     StmtAST *stmt = nullptr;
 
     const Token *tok = peek();
@@ -233,13 +233,13 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
 
         case TokenKind::KwBreak:
             ++cur;
-            stmt = arena->make<BreakStmtAST>(tok->span);
+            stmt = arena->alloc<BreakStmtAST>(tok->span);
             EXPECT(TokenKind::Semicolon);
             break;
 
         case TokenKind::KwReturn:
             ++cur;
-            stmt = arena->make<ReturnStmtAST>(
+            stmt = arena->alloc<ReturnStmtAST>(
                 tok->span, cur != end && cur->kind != TokenKind::Semicolon
                                ? parseExprAST()
                                : nullptr);
@@ -277,7 +277,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
         }
 
         if (stmt != nullptr) {
-            body.emplace_back(arena, stmt);
+            stmts.emplace_back(arena, stmt);
             stmt = nullptr;
         } else {
             sync(stmtLevelSyncSet);
@@ -289,7 +289,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
 
     EXPECT(TokenKind::RBrace);
 
-    return arena->make<BlockStmtAST>(lBrace->span, body);
+    return arena->alloc<BlockStmtAST>(lBrace->span, stmts);
 }
 
 LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
@@ -308,7 +308,7 @@ LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
         RETURN_IF_NULL(type);
     }
 
-    ExprAST *expr = nullptr;
+    ExprAST *init = nullptr;
 
     tok = peek();
     RETURN_IF_NULL(tok);
@@ -316,11 +316,11 @@ LocalStmtAST *Parser::parseLocalStmtAST(bool isConst) {
     if (tok->kind == TokenKind::Equal) {
         ++cur;
 
-        expr = parseExprAST();
-        RETURN_IF_NULL(expr);
+        init = parseExprAST();
+        RETURN_IF_NULL(init);
     }
 
-    return arena->make<LocalStmtAST>(isConst, ident->span, type, expr);
+    return arena->alloc<LocalStmtAST>(isConst, ident->span, type, init);
 }
 
 IfStmtAST *Parser::parseIfStmtAST() {
@@ -349,7 +349,7 @@ IfStmtAST *Parser::parseIfStmtAST() {
         RETURN_IF_NULL(elseBranch);
     }
 
-    return arena->make<IfStmtAST>(tok->span, cond, thenBranch, elseBranch);
+    return arena->alloc<IfStmtAST>(tok->span, cond, thenBranch, elseBranch);
 }
 
 WhileStmtAST *Parser::parseWhileStmtAST() {
@@ -362,7 +362,7 @@ WhileStmtAST *Parser::parseWhileStmtAST() {
     BlockStmtAST *body = parseBlockStmtAST();
     RETURN_IF_NULL(body);
 
-    return arena->make<WhileStmtAST>(tok->span, cond, body);
+    return arena->alloc<WhileStmtAST>(tok->span, cond, body);
 }
 
 StmtAST *Parser::parseExprStmtOrAssignStmtAST() {
@@ -374,14 +374,14 @@ StmtAST *Parser::parseExprStmtOrAssignStmtAST() {
 
     switch (tok->kind) {
     case TokenKind::Semicolon:
-        return arena->make<ExprStmtAST>(tok->span, lhs);
+        return arena->alloc<ExprStmtAST>(tok->span, lhs);
 
     case TokenKind::Equal: {
         ExprAST *rhs = parseExprAST();
         RETURN_IF_NULL(rhs);
 
         EXPECT(TokenKind::Semicolon);
-        return arena->make<AssignStmtAST>(tok->span, lhs, rhs);
+        return arena->alloc<AssignStmtAST>(tok->span, lhs, rhs);
 
     } break;
     default:
@@ -405,7 +405,7 @@ ExprAST *Parser::parseExprAST(int prec) {
             ExprAST *arg = parseExprAST();
             RETURN_IF_NULL(arg);
 
-            lhs = arena->make<CallExprAST>(tok->span, lhs, arg);
+            lhs = arena->alloc<CallExprAST>(tok->span, lhs, arg);
 
             EXPECT(TokenKind::RParen);
         } break;
@@ -416,7 +416,7 @@ ExprAST *Parser::parseExprAST(int prec) {
             ExprAST *index = parseExprAST();
             RETURN_IF_NULL(index);
 
-            lhs = arena->make<IndexExprAST>(tok->span, lhs, index);
+            lhs = arena->alloc<IndexExprAST>(tok->span, lhs, index);
 
             EXPECT(TokenKind::RBracket);
         } break;
@@ -430,7 +430,7 @@ ExprAST *Parser::parseExprAST(int prec) {
                 return lhs;
             }
             ++cur;
-            lhs = arena->make<BinaryExprAST>(tok->span, it->second.bind, lhs,
+            lhs = arena->alloc<BinaryExprAST>(tok->span, it->second.bind, lhs,
                                              parseExprAST(it->second.precRhs));
         }
 
@@ -446,16 +446,16 @@ ExprAST *Parser::parsePrimaryExprAST() {
 
     switch (tok->kind) {
     case TokenKind::Number:
-        return arena->make<NumberExprAST>(tok->span);
+        return arena->alloc<NumberExprAST>(tok->span);
 
     case TokenKind::Ident:
-        return arena->make<IdentifierExprAST>(tok->span);
+        return arena->alloc<IdentifierExprAST>(tok->span);
 
     case TokenKind::Minus:
         expr = parsePrimaryExprAST();
         RETURN_IF_NULL(expr);
 
-        return arena->make<UnaryExprAST>(tok->span, UnOpKind::Neg, expr);
+        return arena->alloc<UnaryExprAST>(tok->span, UnOpKind::Neg, expr);
 
     case TokenKind::LParen:
         expr = parseExprAST();
@@ -463,7 +463,7 @@ ExprAST *Parser::parsePrimaryExprAST() {
 
         EXPECT(TokenKind::RParen);
 
-        return arena->make<GroupedExprAST>(tok->span, expr);
+        return arena->alloc<GroupedExprAST>(tok->span, expr);
 
     default:
         errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,

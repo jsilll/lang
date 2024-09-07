@@ -12,7 +12,7 @@ constexpr std::size_t alignUp(std::size_t size, std::size_t align) {
 
 namespace lang {
 
-void *Arena::alloc(std::size_t size) {
+void *Arena::allocInternal(std::size_t size) {
     size = alignUp(size, alignof(max_align_t));
 
     if (allocSize + size > block.size) {

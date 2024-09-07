@@ -3,6 +3,7 @@
 
 #include "Alloc/Arena.h"
 
+#include "Sema/Type.h"
 #include "Support/Reporting.h"
 
 #include "AST/AST.h"
@@ -36,12 +37,18 @@ struct ParseResult {
 
 class Parser {
   public:
-    Parser(TypeContext &tcx, Arena &arena, const std::vector<Token> &tokens)
-        : tcx(&tcx), arena(&arena), cur(tokens.begin()), end(tokens.end()) {}
+    Parser(Arena &arena, TypeContext &typeCtx, const std::vector<Token> &tokens)
+        : arena(&arena), typeCtx(&typeCtx), cur(tokens.begin()), end(tokens.end()) {}
 
     ParseResult parseModuleAST();
 
   private:
+    Arena *arena;
+    TypeContext *typeCtx;
+    std::vector<Token>::const_iterator cur;
+    std::vector<Token>::const_iterator end;
+    std::vector<ParseError> errors;
+
     const Token *peek();
     const Token *next();
     const Token *expect(TokenKind kind);
@@ -64,12 +71,6 @@ class Parser {
     ExprAST *parseExprAST(int prec = 0);
 
     ExprAST *parsePrimaryExprAST();
-
-    TypeContext *tcx;
-    Arena *arena;
-    std::vector<Token>::const_iterator cur;
-    std::vector<Token>::const_iterator end;
-    std::vector<ParseError> errors;
 };
 
 } // namespace lang

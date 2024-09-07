@@ -148,7 +148,7 @@ LexResult Lexer::lexAll(bool includeComments) {
                 break;
             case '>':
                 result.tokens.push_back(
-                    lexAlt('=', TokenKind::GreaterEqual, TokenKind::Less));
+                    lexAlt('=', TokenKind::GreaterEqual, TokenKind::Greater));
                 break;
             case '&':
                 result.tokens.push_back(

@@ -14,7 +14,7 @@ struct SourceLocation {
     std::string_view lineText;
 };
 
-struct SourceFile {
+class SourceFile {
   public:
     SourceFile(std::string_view filename, llvm::StringRef buffer);
 

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <iterator>
+
 /// @brief A singly linked list.
 /// @tparam T The type of the elements in the list.
 ///
@@ -173,13 +174,13 @@ template <typename T> class List {
     template <typename Alloc, typename... Args>
     // NOLINTNEXTLINE
     void emplace_front(Alloc &alloc, Args &&...args) {
-        push_front(alloc.template make<Node>(std::forward<Args>(args)...));
+        push_front(alloc.template alloc<Node>(std::forward<Args>(args)...));
     }
 
     template <typename Alloc, typename... Args>
     // NOLINTNEXTLINE
     void emplace_back(Alloc &alloc, Args &&...args) {
-        push_back(alloc->template make<Node>(std::forward<Args>(args)...));
+        push_back(alloc->template alloc<Node>(std::forward<Args>(args)...));
     }
 
   private:

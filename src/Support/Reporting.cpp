@@ -14,14 +14,14 @@ void reportError(const SourceFile &file, const PrettyError &error,
     const std::string lineNoSpacesLine(lineNoMaxWidth - lineNoWidth, ' ');
     const std::string labelSpaces(loc.column - 1, ' ');
     const std::string labelTildes(error.span.size() - 1, '~');
-    llvm::errs() << lineNoSpacesTitle << "--> Error at " << loc.filename << ":"
-                 << loc.line << ":" << loc.column << ": " << error.title
-                 << "\n";
+    llvm::errs() << lineNoSpacesTitle << "--> Error at " << loc.filename << ':'
+                 << loc.line << ':' << loc.column << ": " << error.title
+                 << '\n';
     llvm::errs() << lineNoSpacesBody << "|\n";
-    llvm::errs() << " " << lineNoSpacesLine << loc.line << " | " << loc.lineText
-                 << "\n";
-    llvm::errs() << lineNoSpacesBody << "| " << labelSpaces << "^"
-                 << labelTildes << " " << error.label << "\n";
+    llvm::errs() << ' ' << lineNoSpacesLine << loc.line << " | " << loc.lineText
+                 << '\n';
+    llvm::errs() << lineNoSpacesBody << "| " << labelSpaces << '^'
+                 << labelTildes << ' ' << error.label << '\n';
 }
 
 } // namespace lang

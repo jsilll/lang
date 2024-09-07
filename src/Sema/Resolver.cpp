@@ -38,7 +38,10 @@ void Resolver::visit(FunctionDeclAST &node) {
 
 void Resolver::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
 
-void Resolver::visit([[maybe_unused]] BreakStmtAST &node) {}
+void Resolver::visit(BreakStmtAST &node) {
+    // TODO: Handle break statements outside of loops (or maybe this should be
+    // done in the resolver?)
+}
 
 void Resolver::visit(ReturnStmtAST &node) {
     if (node.expr != nullptr) {
@@ -49,8 +52,8 @@ void Resolver::visit(ReturnStmtAST &node) {
 void Resolver::visit(LocalStmtAST &node) {
     assert(!locals.empty());
     locals.back().insert({node.span, &node});
-    if (node.expr != nullptr) {
-        ASTVisitor::visit(*node.expr);
+    if (node.init != nullptr) {
+        ASTVisitor::visit(*node.init);
     }
 }
 
@@ -61,7 +64,7 @@ void Resolver::visit(AssignStmtAST &node) {
 
 void Resolver::visit(BlockStmtAST &node) {
     locals.emplace_back();
-    for (const auto &stmt : node.body) {
+    for (const auto &stmt : node.stmts) {
         ASTVisitor::visit(*stmt);
     }
     locals.pop_back();
@@ -83,7 +86,7 @@ void Resolver::visit(WhileStmtAST &node) {
 void Resolver::visit(IdentifierExprAST &node) {
     const auto it = functions.find(node.span);
     if (it != functions.end()) {
-        node.reference = it->second;
+        node.decl = it->second;
         return;
     }
 
@@ -93,10 +96,10 @@ void Resolver::visit(IdentifierExprAST &node) {
         return;
     }
 
-    node.reference = local;
+    node.decl = local;
 }
 
-void Resolver::visit([[maybe_unused]] NumberExprAST &node) {}
+void Resolver::visit(NumberExprAST &node) {}
 
 void Resolver::visit(UnaryExprAST &node) { ASTVisitor::visit(*node.expr); }
 

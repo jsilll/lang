@@ -1,5 +1,5 @@
-#ifndef LANG_BASE_H
-#define LANG_BASE_H
+#ifndef LANG_DEBUG_H
+#define LANG_DEBUG_H
 
 #define PANIC(...)                                                             \
     do {                                                                       \
@@ -24,4 +24,4 @@
 
 #define UNIMPLEMENTED() PANIC("Unimplemented code reached")
 
-#endif // LANG_BASE_H
+#endif // LANG_DEBUG_H

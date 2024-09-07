@@ -3,6 +3,8 @@
 
 #include "Alloc/Arena.h"
 
+#include <string>
+
 namespace lang {
 
 enum class TypeKind {
@@ -13,25 +15,28 @@ enum class TypeKind {
 struct Type {
     TypeKind kind;
     Type(TypeKind kind) : kind(kind) {}
+    std::string toString() const;
 };
 
 class TypeContext {
   public:
     explicit TypeContext(Arena &arena) : arena(&arena) {
-        tyVoid = arena.make<Type>(TypeKind::Void);
-        tyNumber = arena.make<Type>(TypeKind::Number);
+        tyVoid = arena.alloc<Type>(TypeKind::Void);
+        tyNumber = arena.alloc<Type>(TypeKind::Number);
     }
 
-    Type *getTyVoid() const { return tyVoid; }
+    Type *getTypeVoid() const { return tyVoid; }
 
-    Type *getTyNumber() const { return tyNumber; }
+    Type *getTypeNumber() const { return tyNumber; }
 
+    // TODO: Implement hash-consing
     template <typename... Args> Type *make(Args &&...args) {
-        return arena->make<Type>(std::forward<Args>(args)...);
+        return arena->alloc<Type>(std::forward<Args>(args)...);
     }
 
   private:
     Arena *arena;
+
     Type *tyVoid;
     Type *tyNumber;
 };

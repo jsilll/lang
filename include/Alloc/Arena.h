@@ -47,11 +47,11 @@ class Arena {
         avail.splice(avail.begin(), used);
     }
 
-    template <typename T, typename... Args> T *make(Args &&...args) {
+    template <typename T, typename... Args> T *alloc(Args &&...args) {
         static_assert(std::is_trivially_destructible_v<T>,
                       "T must be trivially destructible");
         ++allocations;
-        return new (alloc(sizeof(T))) T(std::forward<Args>(args)...);
+        return new (allocInternal(sizeof(T))) T(std::forward<Args>(args)...);
     }
 
   private:
@@ -63,14 +63,14 @@ class Arena {
             : data(std::make_unique<std::byte[]>(size)), size(size) {}
     };
 
-    void *alloc(std::size_t bytes);
-
     std::size_t allocations;
     std::size_t defaultSize;
     std::size_t allocSize;
     Block block;
     std::list<Block> used;
     std::list<Block> avail;
+
+    void *allocInternal(std::size_t bytes);
 };
 
 } // namespace lang

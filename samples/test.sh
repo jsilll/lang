@@ -1,7 +1,9 @@
+BOLD=$(tput bold)
+UNDERLINE=$(tput smul)
+RESET=$(tput sgr0)
 set -e
-cmake -S . -B build
-cmake --build build
+./build.sh build
 for file in ./samples/*.lang; do
-    echo -e "\033[1;4mCompiling $file\033[0m"
-    ./build/src/compiler $file $@ --emit=ast
+    echo -e "\n${BOLD}${UNDERLINE}Compiling $file${RESET}"
+    ./build/src/compiler $file --emit=ast $@
 done

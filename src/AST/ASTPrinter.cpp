@@ -32,7 +32,8 @@ void ASTPrinter::visit(const ModuleAST &node) {
 
 void ASTPrinter::visit(const FunctionDeclAST &node) {
     INDENT();
-    os << "FunctionDeclAST: " << node.ident << '\n';
+    os << "FunctionDeclAST: " << node.ident << ": " << node.retType->toString()
+       << '\n';
     for (auto *param : node.params) {
         visit(*param);
     }
@@ -65,10 +66,14 @@ void ASTPrinter::visit(const ReturnStmtAST &node) {
 
 void ASTPrinter::visit(const LocalStmtAST &node) {
     INDENT();
-    os << "LocalStmtAST: " << (node.isConst ? "let" : "mut") << " " << node.span
-       << "\n";
-    if (node.expr) {
-        ASTVisitor::visit(*node.expr);
+    os << "LocalStmtAST: " << (node.isConst ? "let" : "mut") << ' '
+       << node.span;
+    if (node.type) {
+        os << ": " << node.type->toString();
+    }
+    os << '\n';
+    if (node.init) {
+        ASTVisitor::visit(*node.init);
     }
 }
 
@@ -82,7 +87,7 @@ void ASTPrinter::visit(const AssignStmtAST &node) {
 void ASTPrinter::visit(const BlockStmtAST &node) {
     INDENT();
     os << "BlockStmtAST\n";
-    for (const StmtAST *stmt : node.body) {
+    for (const StmtAST *stmt : node.stmts) {
         ASTVisitor::visit(*stmt);
     }
 }
@@ -106,23 +111,23 @@ void ASTPrinter::visit(const WhileStmtAST &node) {
 
 void ASTPrinter::visit(const IdentifierExprAST &node) {
     INDENT();
-    os << "IdentifierExprAST: " << node.span << " (";
-    std::visit(Overloaded{[&](const std::monostate) { os << "unresolved"; },
+    os << "IdentifierExprAST: " << node.span;
+    std::visit(Overloaded{[&](const std::monostate) {},
                           [&](const LocalStmtAST *stmt) {
-                              os << "LocalStmtAST("
-                                 << static_cast<const void *>(stmt) << ")";
+                              os << " => LocalStmtAST("
+                                 << static_cast<const void *>(stmt) << ')';
                           },
                           [&](const FunctionDeclAST *decl) {
-                              os << "FunctionDeclAST("
-                                 << static_cast<const void *>(decl) << ")";
+                              os << " => FunctionDeclAST("
+                                 << static_cast<const void *>(decl) << ')';
                           }},
-               node.reference);
-    os << ")\n";
+               node.decl);
+    os << '\n';
 }
 
 void ASTPrinter::visit(const NumberExprAST &node) {
     INDENT();
-    os << "NumberExprAST: " << node.span << "\n";
+    os << "NumberExprAST: " << node.span << '\n';
 }
 
 void ASTPrinter::visit(const UnaryExprAST &node) {

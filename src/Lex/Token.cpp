@@ -1,73 +1,127 @@
 #include "Lex/Token.h"
 
 #include <sstream>
-#include <unordered_map>
-
-namespace {
-
-const std::unordered_map<lang::TokenKind, std::string_view> tokenKindMap = {
-    {lang::TokenKind::BangEqual, "'!='"},
-    {lang::TokenKind::AmpAmp, "'&&'"},
-    {lang::TokenKind::LessEqual, "'<='"},
-    {lang::TokenKind::EqualEqual, "'=='"},
-    {lang::TokenKind::GreaterEqual, "'>='"},
-    {lang::TokenKind::PipePipe, "||"},
-    {lang::TokenKind::KwFn, "'fn'"},
-    {lang::TokenKind::KwVoid, "'void'"},
-    {lang::TokenKind::KwNumber, "'number'"},
-    {lang::TokenKind::KwLet, "'let'"},
-    {lang::TokenKind::KwVar, "'var'"},
-    {lang::TokenKind::KwIf, "'if'"},
-    {lang::TokenKind::KwElse, "'else'"},
-    {lang::TokenKind::KwWhile, "'while'"},
-    {lang::TokenKind::KwReturn, "'return'"},
-    {lang::TokenKind::Ident, "an identifier"},
-    {lang::TokenKind::Number, "a number"},
-    {lang::TokenKind::Comment, "a comment"},
-};
-
-} // namespace
 
 namespace lang {
 
 std::string tokenKindToString(TokenKind kind) {
-    const int kindInt = static_cast<int>(kind);
-    if (kindInt >= static_cast<int>(TokenKind::Bang) &&
-        kindInt <= static_cast<int>(TokenKind::RBrace)) {
-        return "'" + std::string(1, static_cast<char>(kindInt)) + "'";
+    switch (kind) {
+    case TokenKind::Bang:
+    case TokenKind::Amp:
+    case TokenKind::LParen:
+    case TokenKind::RParen:
+    case TokenKind::Star:
+    case TokenKind::Plus:
+    case TokenKind::Minus:
+    case TokenKind::Comma:
+    case TokenKind::Dot:
+    case TokenKind::Slash:
+    case TokenKind::Colon:
+    case TokenKind::Semicolon:
+    case TokenKind::Less:
+    case TokenKind::Equal:
+    case TokenKind::Greater:
+    case TokenKind::LBracket:
+    case TokenKind::RBracket:
+    case TokenKind::LBrace:
+    case TokenKind::Pipe:
+    case TokenKind::RBrace:
+        return "'" + std::string(1, static_cast<char>(kind)) + "'";
+    case TokenKind::BangEqual:
+        return "'!='";
+    case TokenKind::AmpAmp:
+        return "'&&'";
+    case TokenKind::LessEqual:
+        return "'<='";
+    case TokenKind::EqualEqual:
+        return "'=='";
+    case TokenKind::GreaterEqual:
+        return "'>='";
+    case TokenKind::PipePipe:
+        return "||";
+    case TokenKind::KwFn:
+        return "'fn'";
+    case TokenKind::KwVoid:
+        return "'void'";
+    case TokenKind::KwNumber:
+        return "'number'";
+    case TokenKind::KwLet:
+        return "'let'";
+    case TokenKind::KwVar:
+        return "'var'";
+    case TokenKind::KwIf:
+        return "'if'";
+    case TokenKind::KwElse:
+        return "'else'";
+    case TokenKind::KwWhile:
+        return "'while'";
+    case TokenKind::KwBreak:
+        return "'break'";
+    case TokenKind::KwReturn:
+        return "'return'";
+    case TokenKind::Ident:
+        return "an identifier";
+    case TokenKind::Number:
+        return "a number";
+    case TokenKind::Comment:
+        return "a comment";
     }
-
-    const auto it = tokenKindMap.find(kind);
-    if (it == tokenKindMap.end()) {
-        return "an unknown token";
-    }
-
-    return std::string(it->second);
+    return "unknown";
 }
 
 std::string Token::toString() const {
     std::ostringstream oss;
-
-    const auto kindInt = static_cast<int>(this->kind);
-    if (kindInt >= static_cast<int>(TokenKind::KwReturn) &&
-        kindInt <= static_cast<int>(TokenKind::KwFn)) {
+    switch (kind) {
+    case TokenKind::Bang:
+    case TokenKind::Amp:
+    case TokenKind::LParen:
+    case TokenKind::RParen:
+    case TokenKind::Star:
+    case TokenKind::Plus:
+    case TokenKind::Minus:
+    case TokenKind::Comma:
+    case TokenKind::Dot:
+    case TokenKind::Slash:
+    case TokenKind::Colon:
+    case TokenKind::Semicolon:
+    case TokenKind::Less:
+    case TokenKind::Equal:
+    case TokenKind::Greater:
+    case TokenKind::LBracket:
+    case TokenKind::RBracket:
+    case TokenKind::LBrace:
+    case TokenKind::Pipe:
+    case TokenKind::RBrace:
+        return std::string(1, static_cast<char>(kind));
+    case TokenKind::BangEqual:
+    case TokenKind::AmpAmp:
+    case TokenKind::LessEqual:
+    case TokenKind::EqualEqual:
+    case TokenKind::GreaterEqual:
+    case TokenKind::PipePipe:
+        return std::string(span);
+    case TokenKind::KwFn:
+    case TokenKind::KwVoid:
+    case TokenKind::KwNumber:
+    case TokenKind::KwLet:
+    case TokenKind::KwVar:
+    case TokenKind::KwIf:
+    case TokenKind::KwElse:
+    case TokenKind::KwWhile:
+    case TokenKind::KwBreak:
+    case TokenKind::KwReturn:
         oss << "Keyword(";
-    } else {
-        switch (kind) {
-        case TokenKind::Number:
-            oss << "Number(";
-            break;
-        case TokenKind::Ident:
-            oss << "Identifier(";
-            break;
-        case TokenKind::Comment:
-            oss << "Comment(";
-            break;
-        default:
-            return std::string(span);
-        }
+        break;
+    case TokenKind::Number:
+        oss << "Number(";
+        break;
+    case TokenKind::Ident:
+        oss << "Identifier(";
+        break;
+    case TokenKind::Comment:
+        oss << "Comment(";
+        break;
     }
-
     oss << span << ")";
     return oss.str();
 }

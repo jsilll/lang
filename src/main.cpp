@@ -1,6 +1,8 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 
+#include "AST/AST.h"
+#include "Sema/Type.h"
 #include "Support/Debug.h"
 #include "Support/Reporting.h"
 #include "Support/SourceFile.h"
@@ -12,6 +14,7 @@
 #include "Parse/Parser.h"
 
 #include "Sema/Resolver.h"
+#include "Sema/Sema.h"
 
 namespace {
 
@@ -60,7 +63,7 @@ int main(int argc, char **argv) {
     const auto file = llvm::MemoryBuffer::getFile(inputFilename);
 
     if (!file) {
-        llvm::errs() << "Error: " << file.getError().message() << "\n";
+        llvm::errs() << "Error: " << file.getError().message() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -71,7 +74,7 @@ int main(int argc, char **argv) {
 
     if (compilerEmitAction == CompilerEmitAction::EmitLex) {
         for (const auto &token : lexResult.tokens) {
-            llvm::outs() << token.toString() << "\n";
+            llvm::outs() << token.toString() << '\n';
         }
     }
 
@@ -90,10 +93,10 @@ int main(int argc, char **argv) {
     }
 
     lang::Arena arena(lang::kiloBytes(32));
-    lang::TypeContext tcx(arena);
+    lang::TypeContext typeCtx(arena);
 
     lang::ASTPrinter astPrinter(llvm::outs());
-    lang::Parser parser(tcx, arena, lexResult.tokens);
+    lang::Parser parser(arena, typeCtx, lexResult.tokens);
 
     const auto parseResult = parser.parseModuleAST();
     DEBUG("%lu allocations in %lu bytes", arena.totalAllocations(),
@@ -116,15 +119,29 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    lang::ModuleAST *module = parseResult.module;
+
     lang::Resolver resolver;
-    const auto resolveResult = resolver.resolveModuleAST(*parseResult.module);
+    const auto resolveResult = resolver.resolveModuleAST(*module);
 
     if (compilerEmitAction == CompilerEmitAction::EmitAST) {
-        astPrinter.visit(*parseResult.module);
+        astPrinter.visit(*module);
     }
 
     if (!resolveResult.errors.empty()) {
         reportErrors(source, resolveResult.errors);
+        return EXIT_FAILURE;
+    }
+
+    lang::Sema sema(typeCtx);
+    const auto semaResult = sema.analyzeModuleAST(*module);
+
+    if (compilerEmitAction == CompilerEmitAction::EmitAST) {
+        astPrinter.visit(*module);
+    }
+
+    if (!resolveResult.errors.empty()) {
+        reportErrors(source, semaResult.errors);
         return EXIT_FAILURE;
     }
 }

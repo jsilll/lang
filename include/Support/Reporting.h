@@ -7,15 +7,7 @@
 
 namespace lang {
 
-struct PrettyError {
-    std::string_view span;
-    std::string_view title;
-    std::string label;
-};
-
-void reportError(const SourceFile &file, const PrettyError &error,
-                 unsigned lineNoWidthHint = 0);
-
+// TODO: Move this to a different file
 constexpr unsigned getNumDigits(unsigned n) {
     unsigned digits = 0;
     while (n) {
@@ -25,6 +17,18 @@ constexpr unsigned getNumDigits(unsigned n) {
     return digits;
 }
 
+struct PrettyError {
+    std::string_view span;
+    std::string_view title;
+    std::string label;
+};
+
+void reportError(const SourceFile &file, const PrettyError &error,
+                 unsigned lineNoWidthHint = 0);
+
+/// @brief Reports a vector of errors in batch
+/// @pre errors only contains errors from the same file
+/// @pre errors is sorted in the order of appearence within the file
 template <typename T>
 void reportErrors(
     const lang::SourceFile &file, const std::vector<T> &errors,
@@ -34,20 +38,14 @@ void reportErrors(
         return;
     }
 
-    std::size_t maxLine = 0;
-    for (std::size_t i = 0; i < numErrors; ++i) {
-        const auto &error = errors[i];
-        const SourceLocation loc = file.getLocation(error.span);
-        maxLine = std::max(maxLine, loc.line);
-    }
+    const std::size_t maxLine = file.getLocation(errors.back().span).line;
+    const unsigned lineNoMaxWidth = getNumDigits(maxLine);
+    const std::string lineNoSpacesBody = std::string(lineNoMaxWidth + 2, ' ');
 
     const std::size_t lastButOne = numErrors - 1;
-    const unsigned lineNoWidthMax = getNumDigits(maxLine);
-    const std::string lineNoSpacesBody = std::string(lineNoWidthMax + 2, ' ');
-
     for (std::size_t i = 0; i < numErrors; ++i) {
         const auto &error = errors[i];
-        lang::reportError(file, error.toPretty(), lineNoWidthMax);
+        lang::reportError(file, error.toPretty(), lineNoMaxWidth);
         if (i < lastButOne) {
             llvm::outs() << lineNoSpacesBody << "|\n";
         }

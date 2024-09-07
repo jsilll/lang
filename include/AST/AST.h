@@ -3,12 +3,14 @@
 
 #include "ADT/List.h"
 
-#include "AST/Type.h"
+#include "Sema/Type.h"
 
 #include <string_view>
 #include <variant>
 
 namespace lang {
+
+// == UnOpKind ==
 
 enum class UnOpKind : int {
     Neg = '-',
@@ -16,6 +18,8 @@ enum class UnOpKind : int {
 };
 
 std::string unOpKindToString(UnOpKind kind);
+
+// == BinOpKind ==
 
 enum class BinOpKind : int {
     Mul = '*',
@@ -49,7 +53,9 @@ enum class ExprASTKind {
 struct ExprAST {
     ExprASTKind kind;
     std::string_view span;
-    ExprAST(ExprASTKind kind, std::string_view span) : kind(kind), span(span) {}
+    Type *type;
+    ExprAST(ExprASTKind kind, std::string_view span)
+        : kind(kind), span(span), type(nullptr) {}
 };
 
 // == StmtAST ==
@@ -158,11 +164,11 @@ struct ReturnStmtAST : public StmtAST {
 struct LocalStmtAST : public StmtAST {
     bool isConst;
     Type *type;
-    ExprAST *expr;
+    ExprAST *init;
     LocalStmtAST(bool isConst, std::string_view ident, Type *type,
-                 ExprAST *expr)
+                 ExprAST *init)
         : StmtAST(StmtASTKind::Local, ident), isConst(isConst), type(type),
-          expr(expr) {}
+          init(init) {}
 };
 
 struct AssignStmtAST : public StmtAST {
@@ -173,9 +179,9 @@ struct AssignStmtAST : public StmtAST {
 };
 
 struct BlockStmtAST : public StmtAST {
-    List<StmtAST *> body;
-    BlockStmtAST(std::string_view span, List<StmtAST *> body)
-        : StmtAST(StmtASTKind::Block, span), body(body) {}
+    List<StmtAST *> stmts;
+    BlockStmtAST(std::string_view span, List<StmtAST *> stmts)
+        : StmtAST(StmtASTKind::Block, span), stmts(stmts) {}
 };
 
 struct IfStmtAST : public StmtAST {
@@ -199,20 +205,21 @@ struct WhileStmtAST : public StmtAST {
 
 struct FunctionDeclAST : public DeclAST {
     List<LocalStmtAST *> params;
-    Type *type;
+    Type *retType;
     BlockStmtAST *body;
     FunctionDeclAST(std::string_view ident, List<LocalStmtAST *> params,
-                    Type *type, BlockStmtAST *body)
-        : DeclAST(DeclASTKind::Function, ident), params(params), type(type),
-          body(body) {}
+                    Type *retType, BlockStmtAST *body)
+        : DeclAST(DeclASTKind::Function, ident), params(params),
+          retType(retType), body(body) {}
 };
 
 /// === Identifier Expressions ===
 
+using IdentDecl =
+    std::variant<std::monostate, LocalStmtAST *, FunctionDeclAST *>;
+
 struct IdentifierExprAST : public ExprAST {
-    using ReferenceVariant =
-        std::variant<std::monostate, LocalStmtAST *, FunctionDeclAST *>;
-    ReferenceVariant reference;
+    IdentDecl decl;
     IdentifierExprAST(std::string_view span)
         : ExprAST(ExprASTKind::Identifier, span) {}
 };
