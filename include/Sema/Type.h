@@ -10,12 +10,16 @@ namespace lang {
 enum class TypeKind {
     Void,
     Number,
+    Pointer,
+    Function,
 };
 
 struct Type {
     TypeKind kind;
-    Type(TypeKind kind) : kind(kind) {}
+    explicit Type(TypeKind kind) : kind(kind) {}
     std::string toString() const;
+    template<typename T> T& as() { return static_cast<T&>(this); }
+    template<typename T> const T& as() { return static_cast<const T&>(this); }
 };
 
 class TypeContext {
@@ -39,6 +43,16 @@ class TypeContext {
 
     Type *tyVoid;
     Type *tyNumber;
+
+    // TODO: declare hashCons(Type &type);
+};
+
+struct PointerType : public Type {
+    PointerType() : Type(TypeKind::Pointer) {}
+};
+
+struct FunctionType : public Type {
+    FunctionType() : Type(TypeKind::Function) {}
 };
 
 } // namespace lang

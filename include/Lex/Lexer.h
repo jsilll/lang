@@ -18,7 +18,8 @@ struct LexError {
     std::string_view span;
     LexError(LexErrorKind kind, std::string_view span)
         : kind(kind), span(span) {}
-    PrettyError toPretty() const;
+    TextError toTextError() const;
+    JSONError toJSONError() const;
 };
 
 struct LexResult {
@@ -33,10 +34,10 @@ class Lexer {
     LexResult lexAll(bool includeComments = false);
 
   private:
-    Token lexAlt(char c, TokenKind altKind, TokenKind defaultKind);
-
     size_t idx;
     std::string_view buffer;
+
+    Token lexAlt(char c, TokenKind altKind, TokenKind defaultKind);
 };
 
 } // namespace lang

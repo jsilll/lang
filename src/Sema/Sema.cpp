@@ -12,7 +12,7 @@ template <class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
 
 namespace lang {
 
-PrettyError SemaError::toPretty() const {
+TextError SemaError::toTextError() const {
     switch (kind) {
     case SemaErrorKind::InvalidReturn:
         return {span, "Invalid return statement", "Return type mismatch"};
@@ -21,10 +21,23 @@ PrettyError SemaError::toPretty() const {
     case SemaErrorKind::InvalidBinaryOperation:
         return {span, "Invalid binary operation", "Type mismatch"};
     }
+    return {span, "Unknown sema error title", "Unknown sema error label"};
+}
+
+JSONError SemaError::toJSONError() const {
+    switch (kind) {
+    case SemaErrorKind::InvalidReturn:
+        return {span, "sema-invalid-return"};
+    case SemaErrorKind::InvalidAssignment:
+        return {span, "sema-invalid-assignment"};
+    case SemaErrorKind::InvalidBinaryOperation:
+        return {span, "sema-invalid-binary-operation"};
+    }
+    return {span, "sema-unknown-error"};
 }
 
 SemaResult Sema::analyzeModuleAST(ModuleAST &module) {
-    for (const auto &decl : module.decls) {
+    for (auto *decl : module.decls) {
         ASTVisitor::visit(*decl);
     }
     return {std::move(errors)};
@@ -37,7 +50,7 @@ void Sema::visit(FunctionDeclAST &node) {
 
 void Sema::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
 
-void Sema::visit(BreakStmtAST &node) {}
+void Sema::visit(BreakStmtAST &node) { /* no-op */ }
 
 void Sema::visit(ReturnStmtAST &node) {
     if (node.expr != nullptr) {
@@ -62,6 +75,7 @@ void Sema::visit(ReturnStmtAST &node) {
 void Sema::visit(LocalStmtAST &node) {
     if (node.init != nullptr) {
         ASTVisitor::visit(*node.init);
+
         if (node.type == nullptr) {
             node.type = node.init->type;
         } else {
@@ -86,7 +100,7 @@ void Sema::visit(AssignStmtAST &node) {
 }
 
 void Sema::visit(BlockStmtAST &node) {
-    for (const auto &stmt : node.stmts) {
+    for (auto *stmt : node.stmts) {
         ASTVisitor::visit(*stmt);
     }
 }
@@ -94,6 +108,7 @@ void Sema::visit(BlockStmtAST &node) {
 void Sema::visit(IfStmtAST &node) {
     ASTVisitor::visit(*node.cond);
     ASTVisitor::visit(*node.thenBranch);
+
     if (node.elseBranch != nullptr) {
         ASTVisitor::visit(*node.elseBranch);
     }
@@ -109,6 +124,7 @@ void Sema::visit(IdentifierExprAST &node) {
         Overloaded{
             [&](const std::monostate) {},
             [&](const LocalStmtAST *stmt) { node.type = stmt->type; },
+            // TODO: here the type should be function pointer
             [&](const FunctionDeclAST *decl) { node.type = decl->retType; },
         },
         node.decl);

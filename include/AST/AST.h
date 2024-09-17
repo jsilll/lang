@@ -90,6 +90,8 @@ struct DeclAST {
         : kind(kind), ident(ident) {}
 };
 
+// == ModuleAST ==
+
 struct ModuleAST {
     std::string_view ident;
     List<DeclAST *> decls;
@@ -100,7 +102,8 @@ struct ModuleAST {
 // === Expressions ===
 
 struct NumberExprAST : public ExprAST {
-    NumberExprAST(std::string_view span) : ExprAST(ExprASTKind::Number, span) {}
+    explicit NumberExprAST(std::string_view span)
+        : ExprAST(ExprASTKind::Number, span) {}
 };
 
 struct UnaryExprAST : public ExprAST {
@@ -151,7 +154,7 @@ struct ExprStmtAST : public StmtAST {
 
 struct BreakStmtAST : public StmtAST {
     StmtAST *stmt;
-    BreakStmtAST(std::string_view span)
+    explicit BreakStmtAST(std::string_view span)
         : StmtAST(StmtASTKind::Break, span), stmt(nullptr) {}
 };
 
@@ -215,12 +218,12 @@ struct FunctionDeclAST : public DeclAST {
 
 /// === Identifier Expressions ===
 
-using IdentDecl =
+using IdentifierDecl =
     std::variant<std::monostate, LocalStmtAST *, FunctionDeclAST *>;
 
 struct IdentifierExprAST : public ExprAST {
-    IdentDecl decl;
-    IdentifierExprAST(std::string_view span)
+    IdentifierDecl decl;
+    explicit IdentifierExprAST(std::string_view span)
         : ExprAST(ExprASTKind::Identifier, span) {}
 };
 

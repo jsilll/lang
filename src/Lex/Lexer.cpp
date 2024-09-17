@@ -30,12 +30,30 @@ const std::unordered_map<std::string_view, lang::TokenKind> keywordToTokenKind =
 
 namespace lang {
 
-PrettyError LexError::toPretty() const {
+TextError LexError::toTextError() const {
     switch (kind) {
     case LexErrorKind::InvalidCharacter:
         return {span, "Invalid character", "Invalid character"};
     }
     return {span, "Unknown lex error title", "Unknown lex error label"};
+}
+
+JSONError LexError::toJSONError() const {
+    switch (kind) {
+    case LexErrorKind::InvalidCharacter:
+        return {span, "lex-invalid-character"};
+    }
+    return {span, "lex-unknown-error"};
+}
+
+// NOLINTNEXTLINE
+Token Lexer::lexAlt(char c, TokenKind altKind, TokenKind defaultKind) {
+    if (buffer[idx + 1] == c) {
+        idx += 2;
+        return {altKind, buffer.substr(idx - 2, 2)};
+    }
+    ++idx;
+    return {defaultKind, buffer.substr(idx - 1, 1)};
 }
 
 LexResult Lexer::lexAll(bool includeComments) {
@@ -162,16 +180,6 @@ LexResult Lexer::lexAll(bool includeComments) {
     }
 
     return result;
-}
-
-// NOLINTNEXTLINE
-Token Lexer::lexAlt(char c, TokenKind altKind, TokenKind defaultKind) {
-    if (buffer[idx + 1] == c) {
-        idx += 2;
-        return {altKind, buffer.substr(idx - 2, 2)};
-    }
-    ++idx;
-    return {defaultKind, buffer.substr(idx - 1, 1)};
 }
 
 } // namespace lang

@@ -52,7 +52,7 @@ void ASTPrinter::visit(const BreakStmtAST &node) {
     if (node.stmt == nullptr) {
         os << "(unresolved)\n";
     } else {
-        os << "StmtAST(" << static_cast<const void *>(node.stmt) << ")";
+        os << "StmtAST(" << static_cast<const void *>(node.stmt) << ")\n";
     }
 }
 

@@ -6,8 +6,8 @@ namespace {
 
 struct BinOpPair {
     lang::BinOpKind bind;
-    int precLhs;
-    int precRhs;
+    int precLHS;
+    int precRHS;
 };
 
 const std::unordered_set<lang::TokenKind> declLevelSyncSet = {
@@ -65,7 +65,7 @@ const std::unordered_map<lang::TokenKind, BinOpPair> binOpMap = {
 
 namespace lang {
 
-PrettyError ParseError::toPretty() const {
+TextError ParseError::toTextError() const {
     switch (kind) {
     case ParseErrorKind::UnexpectedEOF:
         return {span, "Unexpected end of file", "Unexpected end of file"};
@@ -79,6 +79,20 @@ PrettyError ParseError::toPretty() const {
                 "Expected a primary expression instead"};
     }
     return {span, "Unknown parse error title", "Unknown parse error label"};
+}
+
+JSONError ParseError::toJSONError() const {
+    switch (kind) {
+    case ParseErrorKind::UnexpectedEOF:
+        return {span, "parse-unexpected-eof"};
+    case ParseErrorKind::UnexpectedToken:
+        return {span, "parse-unexpeected-token"};
+    case ParseErrorKind::ExpectedTypeAnnotation:
+        return {span, "parse-type-annotation"};
+    case ParseErrorKind::ExpectedPrimaryExpression:
+        return {span, "parse-unexpected-primary-expr"};
+    }
+    return {span, "parser-unknown-error"};
 }
 
 const Token *Parser::peek() {
@@ -426,12 +440,12 @@ ExprAST *Parser::parseExprAST(int prec) {
             if (it == binOpMap.end()) {
                 return lhs;
             }
-            if (it->second.precLhs <= prec) {
+            if (it->second.precLHS <= prec) {
                 return lhs;
             }
             ++cur;
             lhs = arena->alloc<BinaryExprAST>(tok->span, it->second.bind, lhs,
-                                             parseExprAST(it->second.precRhs));
+                                              parseExprAST(it->second.precRHS));
         }
 
         tok = peek();

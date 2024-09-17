@@ -1,46 +1,74 @@
 #include "Sema/Resolver.h"
+#include "AST/AST.h"
 
 #include <cassert>
 
 namespace lang {
 
-PrettyError ResolveError::toPretty() const {
+TextError ResolveError::toTextError() const {
     switch (kind) {
+    case ResolveErrorKind::InvalidBreakStmt:
+        return {span, "Invalid break statement", "Does not break anything"};
     case ResolveErrorKind::UnresolvedIdentifier:
         return {span, "Unresolved identifier", "Cannot be resolved"};
     }
     return {span, "Unknown resolve error title", "Unknown resolve error label"};
 }
 
+JSONError ResolveError::toJSONError() const {
+    switch (kind) {
+    case ResolveErrorKind::InvalidBreakStmt:
+        return {span, "resolve-invalid-break-stmt"};
+    case ResolveErrorKind::UnresolvedIdentifier:
+        return {span, "resolve-unresolved-identifier"};
+    }
+    return {span, "resolve-unknown-error"};
+}
+
 ResolveResult Resolver::resolveModuleAST(ModuleAST &module) {
-    for (const auto &decl : module.decls) {
+    for (auto *decl : module.decls) {
         ASTVisitor::visit(*decl);
     }
     deepResolution = true;
-    for (const auto &decl : module.decls) {
+    for (auto *decl : module.decls) {
         ASTVisitor::visit(*decl);
     }
     return {std::move(errors)};
 }
 
+LocalStmtAST *Resolver::lookupLocal(std::string_view ident) const {
+    for (auto it = localsMap.rbegin(); it != localsMap.rend(); ++it) {
+        const auto &locals = *it;
+        const auto found = locals.find(ident);
+        if (found != locals.end()) {
+            return found->second;
+        }
+    }
+    return nullptr;
+}
+
 void Resolver::visit(FunctionDeclAST &node) {
     if (!deepResolution) {
-        functions.insert({node.ident, &node});
+        functionsMap.insert({node.ident, &node});
     } else {
-        locals.emplace_back();
+        localsMap.emplace_back();
         for (auto *param : node.params) {
             visit(*param);
         }
         visit(*node.body);
-        locals.pop_back();
+        localsMap.pop_back();
     }
 }
 
 void Resolver::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
 
 void Resolver::visit(BreakStmtAST &node) {
-    // TODO: Handle break statements outside of loops (or maybe this should be
-    // done in the resolver?)
+    if (breakableStack.empty()) {
+        errors.push_back({ResolveErrorKind::InvalidBreakStmt, node.span});
+        return;
+    }
+
+    node.stmt = breakableStack.top();
 }
 
 void Resolver::visit(ReturnStmtAST &node) {
@@ -50,8 +78,8 @@ void Resolver::visit(ReturnStmtAST &node) {
 }
 
 void Resolver::visit(LocalStmtAST &node) {
-    assert(!locals.empty());
-    locals.back().insert({node.span, &node});
+    assert(!localsMap.empty());
+    localsMap.back().insert({node.span, &node});
     if (node.init != nullptr) {
         ASTVisitor::visit(*node.init);
     }
@@ -63,11 +91,11 @@ void Resolver::visit(AssignStmtAST &node) {
 }
 
 void Resolver::visit(BlockStmtAST &node) {
-    locals.emplace_back();
-    for (const auto &stmt : node.stmts) {
+    localsMap.emplace_back();
+    for (auto *stmt : node.stmts) {
         ASTVisitor::visit(*stmt);
     }
-    locals.pop_back();
+    localsMap.pop_back();
 }
 
 void Resolver::visit(IfStmtAST &node) {
@@ -80,26 +108,28 @@ void Resolver::visit(IfStmtAST &node) {
 
 void Resolver::visit(WhileStmtAST &node) {
     ASTVisitor::visit(*node.cond);
+    breakableStack.push(&node);
     visit(*node.body);
+    breakableStack.pop();
 }
 
 void Resolver::visit(IdentifierExprAST &node) {
-    const auto it = functions.find(node.span);
-    if (it != functions.end()) {
-        node.decl = it->second;
+    LocalStmtAST *local = lookupLocal(node.span);
+    if (local != nullptr) {
+        node.decl = local;
         return;
     }
 
-    LocalStmtAST *local = lookupLocal(node.span);
-    if (local == nullptr) {
+    const auto it = functionsMap.find(node.span);
+    if (it == functionsMap.end()) {
         errors.push_back({ResolveErrorKind::UnresolvedIdentifier, node.span});
         return;
     }
 
-    node.decl = local;
+    node.decl = it->second;
 }
 
-void Resolver::visit(NumberExprAST &node) {}
+void Resolver::visit(NumberExprAST &node) { /* no-op */ }
 
 void Resolver::visit(UnaryExprAST &node) { ASTVisitor::visit(*node.expr); }
 
@@ -119,16 +149,5 @@ void Resolver::visit(IndexExprAST &node) {
 }
 
 void Resolver::visit(GroupedExprAST &node) { ASTVisitor::visit(*node.expr); }
-
-LocalStmtAST *Resolver::lookupLocal(std::string_view ident) const {
-    for (auto it = locals.rbegin(); it != locals.rend(); ++it) {
-        const auto &locals = *it;
-        const auto found = locals.find(ident);
-        if (found != locals.end()) {
-            return found->second;
-        }
-    }
-    return nullptr;
-}
 
 } // namespace lang

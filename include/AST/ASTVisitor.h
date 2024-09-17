@@ -7,10 +7,10 @@ namespace lang {
 
 template <typename Derived, bool IsConst = true> class ASTVisitor {
   protected:
-    ASTVisitor() = default;
-
     template <typename T>
     using MaybeConst = std::conditional_t<IsConst, const T, T>;
+
+    ASTVisitor() = default;
 
     void visit(MaybeConst<ExprAST> &node) {
         switch (node.kind) {

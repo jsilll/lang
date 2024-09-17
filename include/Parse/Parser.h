@@ -3,12 +3,13 @@
 
 #include "Alloc/Arena.h"
 
-#include "Sema/Type.h"
 #include "Support/Reporting.h"
+
+#include "Lex/Token.h"
 
 #include "AST/AST.h"
 
-#include "Lex/Token.h"
+#include "Sema/Type.h"
 
 #include <unordered_set>
 
@@ -27,7 +28,8 @@ struct ParseError {
     TokenKind expected;
     ParseError(ParseErrorKind kind, std::string_view span, TokenKind expected)
         : kind(kind), span(span), expected(expected) {}
-    PrettyError toPretty() const;
+    TextError toTextError() const;
+    JSONError toJSONError() const;
 };
 
 struct ParseResult {
@@ -38,7 +40,8 @@ struct ParseResult {
 class Parser {
   public:
     Parser(Arena &arena, TypeContext &typeCtx, const std::vector<Token> &tokens)
-        : arena(&arena), typeCtx(&typeCtx), cur(tokens.begin()), end(tokens.end()) {}
+        : arena(&arena), typeCtx(&typeCtx), cur(tokens.begin()),
+          end(tokens.end()) {}
 
     ParseResult parseModuleAST();
 

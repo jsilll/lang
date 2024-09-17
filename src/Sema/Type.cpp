@@ -8,6 +8,10 @@ std::string Type::toString() const {
         return "void";
     case TypeKind::Number:
         return "number";
+    case TypeKind::Pointer:
+        return "pointer";
+    case TypeKind::Function:
+        return "function";
     }
     return "unknown";
 }

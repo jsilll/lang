@@ -1,17 +1,19 @@
 #ifndef LANG_RESOLVER_H
 #define LANG_RESOLVER_H
 
+#include "Support/Reporting.h"
+
 #include "AST/AST.h"
 #include "AST/ASTVisitor.h"
 
-#include "Support/Reporting.h"
-
+#include <stack>
 #include <unordered_map>
 #include <vector>
 
 namespace lang {
 
 enum class ResolveErrorKind {
+    InvalidBreakStmt,
     UnresolvedIdentifier,
 };
 
@@ -20,7 +22,8 @@ struct ResolveError {
     std::string_view span;
     ResolveError(ResolveErrorKind kind, std::string_view span)
         : kind(kind), span(span) {}
-    PrettyError toPretty() const;
+    TextError toTextError() const;
+    JSONError toJSONError() const;
 };
 
 struct ResolveResult {
@@ -36,6 +39,14 @@ class Resolver : public MutableASTVisitor<Resolver> {
     ResolveResult resolveModuleAST(ModuleAST &module);
 
   private:
+    bool deepResolution;
+    std::stack<StmtAST *> breakableStack;
+    std::unordered_map<std::string_view, FunctionDeclAST *> functionsMap;
+    std::vector<std::unordered_map<std::string_view, LocalStmtAST *>> localsMap;
+    std::vector<ResolveError> errors;
+
+    LocalStmtAST *lookupLocal(std::string_view ident) const;
+
     void visit(FunctionDeclAST &node);
 
     void visit(ExprStmtAST &node);
@@ -67,13 +78,6 @@ class Resolver : public MutableASTVisitor<Resolver> {
     void visit(IndexExprAST &node);
 
     void visit(GroupedExprAST &node);
-
-    LocalStmtAST *lookupLocal(std::string_view ident) const;
-
-    bool deepResolution;
-    std::unordered_map<std::string_view, FunctionDeclAST *> functions;
-    std::vector<std::unordered_map<std::string_view, LocalStmtAST *>> locals;
-    std::vector<ResolveError> errors;
 };
 
 } // namespace lang

@@ -19,7 +19,8 @@ enum class SemaErrorKind {
 struct SemaError {
     SemaErrorKind kind;
     std::string_view span;
-    PrettyError toPretty() const;
+    TextError toTextError() const;
+    JSONError toJSONError() const;
 };
 
 struct SemaResult {
@@ -35,6 +36,10 @@ class Sema : public MutableASTVisitor<Sema> {
     SemaResult analyzeModuleAST(ModuleAST &module);
 
   private:
+    TypeContext &typeCtx;
+    FunctionDeclAST *currentFunction;
+    std::vector<SemaError> errors;
+
     void visit(FunctionDeclAST &node);
 
     void visit(ExprStmtAST &node);
@@ -66,10 +71,6 @@ class Sema : public MutableASTVisitor<Sema> {
     void visit(IndexExprAST &node);
 
     void visit(GroupedExprAST &node);
-
-    TypeContext &typeCtx;
-    FunctionDeclAST *currentFunction;
-    std::vector<SemaError> errors;
 };
 
 } // namespace lang
