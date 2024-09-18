@@ -1,3 +1,5 @@
+[//]: # (TODO: Update README)
+
 # Lang Compiler (Name TBD)
 
 This project is an LLVM-based compiler for a custom programming language called "Lang".

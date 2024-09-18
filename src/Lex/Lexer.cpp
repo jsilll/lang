@@ -35,7 +35,7 @@ TextError LexError::toTextError() const {
     case LexErrorKind::InvalidCharacter:
         return {span, "Invalid character", "Invalid character"};
     }
-    return {span, "Unknown lex error title", "Unknown lex error label"};
+    return {span, "Unknown lexing error title", "Unknown lex error label"};
 }
 
 JSONError LexError::toJSONError() const {

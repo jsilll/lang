@@ -1,4 +1,4 @@
-#include "Sema/Sema.h"
+#include "Analysis/TypeChecker.h"
 
 namespace {
 
@@ -12,67 +12,65 @@ template <class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
 
 namespace lang {
 
-TextError SemaError::toTextError() const {
+TextError TypeCheckerError::toTextError() const {
     switch (kind) {
-    case SemaErrorKind::InvalidReturn:
+    case TypeCheckerErrorKind::InvalidReturn:
         return {span, "Invalid return statement", "Return type mismatch"};
-    case SemaErrorKind::InvalidAssignment:
+    case TypeCheckerErrorKind::InvalidAssignment:
         return {span, "Invalid assignment", "Type mismatch"};
-    case SemaErrorKind::InvalidBinaryOperation:
+    case TypeCheckerErrorKind::InvalidBinaryOperation:
         return {span, "Invalid binary operation", "Type mismatch"};
     }
-    return {span, "Unknown sema error title", "Unknown sema error label"};
+    return {span, "Unknown type checking error title", "Unknown type checking error label"};
 }
 
-JSONError SemaError::toJSONError() const {
+JSONError TypeCheckerError::toJSONError() const {
     switch (kind) {
-    case SemaErrorKind::InvalidReturn:
-        return {span, "sema-invalid-return"};
-    case SemaErrorKind::InvalidAssignment:
-        return {span, "sema-invalid-assignment"};
-    case SemaErrorKind::InvalidBinaryOperation:
-        return {span, "sema-invalid-binary-operation"};
+    case TypeCheckerErrorKind::InvalidReturn:
+        return {span, "type-check-invalid-return"};
+    case TypeCheckerErrorKind::InvalidAssignment:
+        return {span, "type-check-invalid-assignment"};
+    case TypeCheckerErrorKind::InvalidBinaryOperation:
+        return {span, "type-check-invalid-binary-operation"};
     }
-    return {span, "sema-unknown-error"};
+    return {span, "type-check-unknown-error"};
 }
 
-SemaResult Sema::analyzeModuleAST(ModuleAST &module) {
+TypeCheckerResult TypeChecker::analyzeModuleAST(ModuleAST &module) {
     for (auto *decl : module.decls) {
         ASTVisitor::visit(*decl);
     }
     return {std::move(errors)};
 }
 
-void Sema::visit(FunctionDeclAST &node) {
+void TypeChecker::visit(FunctionDeclAST &node) {
     currentFunction = &node;
     ASTVisitor::visit(*node.body);
 }
 
-void Sema::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
+void TypeChecker::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
 
-void Sema::visit(BreakStmtAST &node) { /* no-op */ }
-
-void Sema::visit(ReturnStmtAST &node) {
+void TypeChecker::visit(ReturnStmtAST &node) {
     if (node.expr != nullptr) {
         ASTVisitor::visit(*node.expr);
     }
 
     if (currentFunction->retType == nullptr) {
         if (node.expr != nullptr) {
-            errors.push_back({SemaErrorKind::InvalidReturn, node.span});
+            errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
         }
     } else {
         if (node.expr == nullptr) {
-            errors.push_back({SemaErrorKind::InvalidReturn, node.span});
+            errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
         } else {
             if (node.expr->type != currentFunction->retType) {
-                errors.push_back({SemaErrorKind::InvalidReturn, node.span});
+                errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
             }
         }
     }
 }
 
-void Sema::visit(LocalStmtAST &node) {
+void TypeChecker::visit(LocalStmtAST &node) {
     if (node.init != nullptr) {
         ASTVisitor::visit(*node.init);
 
@@ -80,32 +78,32 @@ void Sema::visit(LocalStmtAST &node) {
             node.type = node.init->type;
         } else {
             if (node.type != node.init->type) {
-                errors.push_back({SemaErrorKind::InvalidAssignment, node.span});
+                errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
             }
         }
     } else {
         if (node.type == nullptr) {
-            errors.push_back({SemaErrorKind::InvalidAssignment, node.span});
+            errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
         }
     }
 }
 
-void Sema::visit(AssignStmtAST &node) {
+void TypeChecker::visit(AssignStmtAST &node) {
     ASTVisitor::visit(*node.lhs);
     ASTVisitor::visit(*node.rhs);
 
     if (node.lhs->type != node.rhs->type) {
-        errors.push_back({SemaErrorKind::InvalidAssignment, node.span});
+        errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
     }
 }
 
-void Sema::visit(BlockStmtAST &node) {
+void TypeChecker::visit(BlockStmtAST &node) {
     for (auto *stmt : node.stmts) {
         ASTVisitor::visit(*stmt);
     }
 }
 
-void Sema::visit(IfStmtAST &node) {
+void TypeChecker::visit(IfStmtAST &node) {
     ASTVisitor::visit(*node.cond);
     ASTVisitor::visit(*node.thenBranch);
 
@@ -114,12 +112,12 @@ void Sema::visit(IfStmtAST &node) {
     }
 }
 
-void Sema::visit(WhileStmtAST &node) {
+void TypeChecker::visit(WhileStmtAST &node) {
     ASTVisitor::visit(*node.cond);
     ASTVisitor::visit(*node.body);
 }
 
-void Sema::visit(IdentifierExprAST &node) {
+void TypeChecker::visit(IdentifierExprAST &node) {
     std::visit(
         Overloaded{
             [&](const std::monostate) {},
@@ -130,26 +128,26 @@ void Sema::visit(IdentifierExprAST &node) {
         node.decl);
 }
 
-void Sema::visit(NumberExprAST &node) { node.type = typeCtx.getTypeNumber(); }
+void TypeChecker::visit(NumberExprAST &node) { node.type = typeCtx.getTypeNumber(); }
 
-void Sema::visit(UnaryExprAST &node) {
+void TypeChecker::visit(UnaryExprAST &node) {
     ASTVisitor::visit(*node.expr);
 
     node.type = node.expr->type;
 }
 
-void Sema::visit(BinaryExprAST &node) {
+void TypeChecker::visit(BinaryExprAST &node) {
     ASTVisitor::visit(*node.lhs);
     ASTVisitor::visit(*node.rhs);
 
     if (node.lhs->type != node.rhs->type) {
-        errors.push_back({SemaErrorKind::InvalidBinaryOperation, node.span});
+        errors.push_back({TypeCheckerErrorKind::InvalidBinaryOperation, node.span});
     }
 
     node.type = node.lhs->type;
 }
 
-void Sema::visit(CallExprAST &node) {
+void TypeChecker::visit(CallExprAST &node) {
     ASTVisitor::visit(*node.callee);
     ASTVisitor::visit(*node.arg);
 
@@ -160,14 +158,14 @@ void Sema::visit(CallExprAST &node) {
     node.type = node.callee->type;
 }
 
-void Sema::visit(IndexExprAST &node) {
+void TypeChecker::visit(IndexExprAST &node) {
     ASTVisitor::visit(*node.base);
     ASTVisitor::visit(*node.index);
 
     node.type = node.base->type;
 }
 
-void Sema::visit(GroupedExprAST &node) {
+void TypeChecker::visit(GroupedExprAST &node) {
     ASTVisitor::visit(*node.expr);
 
     node.type = node.expr->type;

@@ -1,21 +1,10 @@
-#ifndef LANG_LIST_H
-#define LANG_LIST_H
+#ifndef LANG_NON_OWNING_LIST_H
+#define LANG_NON_OWNING_LIST_H
 
 #include <cstddef>
 #include <iterator>
 
-/// @brief A singly linked list.
-/// @tparam T The type of the elements in the list.
-///
-/// @note This is a raw implementation of a singly linked list. It is meant to
-/// replace allocating alternatives like std::vector and std::list. This way,
-/// the caller can decide how to allocate the nodes, and the list will not
-/// delete them on destruction. For now this is used in the AST representation
-/// since the whole AST is allocated in one contiguous block of memory with no
-/// RAII semantics. This discards having nodes that are not trivially
-/// destructible, as would happen if std::vector or std::list were used in nodes
-/// with a variable number of children (e.g. BlockStmtAST).
-template <typename T> class List {
+template <typename T> class NonOwningList {
   public:
     struct Node {
         T data;
@@ -98,14 +87,14 @@ template <typename T> class List {
         const Node *cur;
     };
 
-    List() noexcept : head(nullptr), tail(nullptr), size_(0) {}
-    ~List() = default;
+    NonOwningList() noexcept : head(nullptr), tail(nullptr), size_(0) {}
+    ~NonOwningList() = default;
 
-    List(List &&) = delete;
-    List &operator=(List &&) = delete;
+    NonOwningList(NonOwningList &&) = delete;
+    NonOwningList &operator=(NonOwningList &&) = delete;
 
-    List(const List &) = default;
-    List &operator=(const List &) = default;
+    NonOwningList(const NonOwningList &) = default;
+    NonOwningList &operator=(const NonOwningList &) = default;
 
     [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
     [[nodiscard]] std::size_t size() const noexcept { return size_; }
@@ -190,4 +179,4 @@ template <typename T> class List {
     std::size_t size_;
 };
 
-#endif // LANG_LIST_H
+#endif // LANG_NON_OWNING_LIST_H

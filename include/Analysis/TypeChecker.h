@@ -1,50 +1,52 @@
-#ifndef LANG_SEMA_H
-#define LANG_SEMA_H
+#ifndef LANG_TYPE_CHECKER_H
+#define LANG_TYPE_CHECKER_H
 
 #include "Support/Reporting.h"
 
 #include "AST/AST.h"
 #include "AST/ASTVisitor.h"
 
+#include "Typing/TypeContext.h"
+
 #include <vector>
 
 namespace lang {
 
-enum class SemaErrorKind {
+enum class TypeCheckerErrorKind {
     InvalidReturn,
     InvalidAssignment,
     InvalidBinaryOperation,
 };
 
-struct SemaError {
-    SemaErrorKind kind;
+struct TypeCheckerError {
+    TypeCheckerErrorKind kind;
     std::string_view span;
     TextError toTextError() const;
     JSONError toJSONError() const;
 };
 
-struct SemaResult {
-    std::vector<SemaError> errors;
+struct TypeCheckerResult {
+    std::vector<TypeCheckerError> errors;
 };
 
-class Sema : public MutableASTVisitor<Sema> {
-    friend class ASTVisitor<Sema, false>;
+class TypeChecker : public MutableASTVisitor<TypeChecker> {
+    friend class ASTVisitor<TypeChecker, false>;
 
   public:
-    Sema(TypeContext &typeCtx) : typeCtx(typeCtx), currentFunction(nullptr) {}
+    TypeChecker(TypeContext &typeCtx) : typeCtx(typeCtx), currentFunction(nullptr) {}
 
-    SemaResult analyzeModuleAST(ModuleAST &module);
+    TypeCheckerResult analyzeModuleAST(ModuleAST &module);
 
   private:
     TypeContext &typeCtx;
     FunctionDeclAST *currentFunction;
-    std::vector<SemaError> errors;
+    std::vector<TypeCheckerError> errors;
 
     void visit(FunctionDeclAST &node);
 
     void visit(ExprStmtAST &node);
 
-    void visit(BreakStmtAST &node);
+    void visit(BreakStmtAST &node) {}
 
     void visit(ReturnStmtAST &node);
 
@@ -75,4 +77,4 @@ class Sema : public MutableASTVisitor<Sema> {
 
 } // namespace lang
 
-#endif // LANG_SEMA_H
+#endif // LANG_TYPE_CHECKER

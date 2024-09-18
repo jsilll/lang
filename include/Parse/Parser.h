@@ -9,7 +9,7 @@
 
 #include "AST/AST.h"
 
-#include "Sema/Type.h"
+#include "Typing/TypeContext.h"
 
 #include <unordered_set>
 
@@ -18,7 +18,7 @@ namespace lang {
 enum class ParseErrorKind {
     UnexpectedEOF,
     UnexpectedToken,
-    ExpectedTypeAnnotation,
+    ExpectedType,
     ExpectedPrimaryExpression,
 };
 

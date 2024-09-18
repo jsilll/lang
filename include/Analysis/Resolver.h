@@ -3,18 +3,14 @@
 
 #include "Support/Reporting.h"
 
-#include "AST/AST.h"
 #include "AST/ASTVisitor.h"
 
-#include <stack>
 #include <unordered_map>
-#include <vector>
 
 namespace lang {
 
 enum class ResolveErrorKind {
-    InvalidBreakStmt,
-    UnresolvedIdentifier,
+    UnknownIdentifier,
 };
 
 struct ResolveError {
@@ -40,7 +36,6 @@ class Resolver : public MutableASTVisitor<Resolver> {
 
   private:
     bool deepResolution;
-    std::stack<StmtAST *> breakableStack;
     std::unordered_map<std::string_view, FunctionDeclAST *> functionsMap;
     std::vector<std::unordered_map<std::string_view, LocalStmtAST *>> localsMap;
     std::vector<ResolveError> errors;
@@ -51,7 +46,7 @@ class Resolver : public MutableASTVisitor<Resolver> {
 
     void visit(ExprStmtAST &node);
 
-    void visit(BreakStmtAST &node);
+    void visit(BreakStmtAST &node) {}
 
     void visit(ReturnStmtAST &node);
 
@@ -67,7 +62,7 @@ class Resolver : public MutableASTVisitor<Resolver> {
 
     void visit(IdentifierExprAST &node);
 
-    void visit(NumberExprAST &node);
+    void visit(NumberExprAST &node) {}
 
     void visit(UnaryExprAST &node);
 

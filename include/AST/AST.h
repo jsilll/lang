@@ -1,9 +1,9 @@
 #ifndef LANG_AST_H
 #define LANG_AST_H
 
-#include "ADT/List.h"
+#include "ADT/NonOwningList.h"
 
-#include "Sema/Type.h"
+#include "Typing/Type.h"
 
 #include <string_view>
 #include <variant>
@@ -94,8 +94,8 @@ struct DeclAST {
 
 struct ModuleAST {
     std::string_view ident;
-    List<DeclAST *> decls;
-    ModuleAST(std::string_view ident, List<DeclAST *> decls)
+    NonOwningList<DeclAST *> decls;
+    ModuleAST(std::string_view ident, NonOwningList<DeclAST *> decls)
         : ident(ident), decls(decls) {}
 };
 
@@ -182,8 +182,8 @@ struct AssignStmtAST : public StmtAST {
 };
 
 struct BlockStmtAST : public StmtAST {
-    List<StmtAST *> stmts;
-    BlockStmtAST(std::string_view span, List<StmtAST *> stmts)
+    NonOwningList<StmtAST *> stmts;
+    BlockStmtAST(std::string_view span, NonOwningList<StmtAST *> stmts)
         : StmtAST(StmtASTKind::Block, span), stmts(stmts) {}
 };
 
@@ -207,11 +207,12 @@ struct WhileStmtAST : public StmtAST {
 /// === Declarations ===
 
 struct FunctionDeclAST : public DeclAST {
-    List<LocalStmtAST *> params;
+    NonOwningList<LocalStmtAST *> params;
     Type *retType;
     BlockStmtAST *body;
-    FunctionDeclAST(std::string_view ident, List<LocalStmtAST *> params,
-                    Type *retType, BlockStmtAST *body)
+    FunctionDeclAST(std::string_view ident,
+                    NonOwningList<LocalStmtAST *> params, Type *retType,
+                    BlockStmtAST *body)
         : DeclAST(DeclASTKind::Function, ident), params(params),
           retType(retType), body(body) {}
 };

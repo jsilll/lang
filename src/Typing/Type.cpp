@@ -1,4 +1,4 @@
-#include "Sema/Type.h"
+#include "Typing/Type.h"
 
 namespace lang {
 

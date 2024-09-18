@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Default values for variables
+set -e
+
 LLVM_DIR="/usr/lib/llvm-14"
 BUILD_DIR="build"
 BUILD_TYPE="Debug"
@@ -9,7 +10,6 @@ CXX_COMPILER="clang++"
 CCACHE="ccache"
 GENERATOR="Ninja"
 
-# Function to display usage information
 usage() {
     echo "Usage: $0 <command> [options]"
     echo "Commands:"
@@ -28,7 +28,6 @@ usage() {
     exit 1
 }
 
-# Parse command-line options
 while [[ $# -gt 0 ]]; do
     case $1 in
         --build-dir)
@@ -65,12 +64,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Check if a command is provided
 if [ $# -eq 0 ]; then
     usage
 fi
 
-# Execute the appropriate command
 case "$1" in
     configure)
         mkdir -p "$BUILD_DIR"

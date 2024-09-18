@@ -72,13 +72,13 @@ TextError ParseError::toTextError() const {
     case ParseErrorKind::UnexpectedToken:
         return {span, "Unexpected token",
                 "Expected " + tokenKindToString(expected) + " instead"};
-    case ParseErrorKind::ExpectedTypeAnnotation:
-        return {span, "Unexpected token", "Expected a type annotation instead"};
+    case ParseErrorKind::ExpectedType:
+        return {span, "Unexpected token", "Expected a type instead"};
     case ParseErrorKind::ExpectedPrimaryExpression:
         return {span, "Unexpected token",
                 "Expected a primary expression instead"};
     }
-    return {span, "Unknown parse error title", "Unknown parse error label"};
+    return {span, "Unknown parsing error title", "Unknown parse error label"};
 }
 
 JSONError ParseError::toJSONError() const {
@@ -87,10 +87,10 @@ JSONError ParseError::toJSONError() const {
         return {span, "parse-unexpected-eof"};
     case ParseErrorKind::UnexpectedToken:
         return {span, "parse-unexpeected-token"};
-    case ParseErrorKind::ExpectedTypeAnnotation:
-        return {span, "parse-type-annotation"};
+    case ParseErrorKind::ExpectedType:
+        return {span, "parse-expected-type"};
     case ParseErrorKind::ExpectedPrimaryExpression:
-        return {span, "parse-unexpected-primary-expr"};
+        return {span, "parse-expected-primary-expr"};
     }
     return {span, "parser-unknown-error"};
 }
@@ -144,7 +144,7 @@ void Parser::sync(const std::unordered_set<TokenKind> &syncSet) {
 }
 
 ParseResult Parser::parseModuleAST() {
-    List<DeclAST *> decls;
+    NonOwningList<DeclAST *> decls;
     DeclAST *decl = nullptr;
 
     const Token *tok = peek();
@@ -181,7 +181,7 @@ FunctionDeclAST *Parser::parseFunctionDeclAST() {
 
     EXPECT(TokenKind::LParen);
 
-    List<LocalStmtAST *> params;
+    NonOwningList<LocalStmtAST *> params;
     LocalStmtAST *param = nullptr;
 
     const Token *tok = peek();
@@ -224,7 +224,7 @@ Type *Parser::parseTypeAnnotation() {
     case TokenKind::KwNumber:
         return typeCtx->getTypeNumber();
     default:
-        errors.emplace_back(ParseErrorKind::ExpectedTypeAnnotation, tok->span,
+        errors.emplace_back(ParseErrorKind::ExpectedType, tok->span,
                             TokenKind::Amp);
     }
 
@@ -235,7 +235,7 @@ BlockStmtAST *Parser::parseBlockStmtAST() {
     const Token *lBrace = expect(TokenKind::LBrace);
     RETURN_IF_NULL(lBrace);
 
-    List<StmtAST *> stmts;
+    NonOwningList<StmtAST *> stmts;
     StmtAST *stmt = nullptr;
 
     const Token *tok = peek();

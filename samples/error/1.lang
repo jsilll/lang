@@ -1,0 +1,4 @@
+fn main() : void {
+    return;
+    let a = 1;
+}

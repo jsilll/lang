@@ -9,8 +9,9 @@
 
 #include "Parse/Parser.h"
 
-#include "Sema/Resolver.h"
-#include "Sema/Sema.h"
+#include "Analysis/CFA.h"
+#include "Analysis/Resolver.h"
+#include "Analysis/TypeChecker.h"
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -68,15 +69,15 @@ const llvm::cl::opt<CompilerEmitAction> compilerEmitAction(
 
 template <typename T>
 void reportErrors(
-    CompilerErrorFormat format, const lang::SourceFile &file,
-    const std::vector<T> &errors,
+    llvm::raw_ostream &os, CompilerErrorFormat format,
+    const lang::SourceFile &file, const std::vector<T> &errors,
     std::size_t maxErrors = std::numeric_limits<std::size_t>::max()) {
     switch (format) {
     case CompilerErrorFormat::Text:
-        lang::reportTextErrors(file, errors, maxErrors);
+        lang::reportTextErrors(os, file, errors, maxErrors);
         break;
     case CompilerErrorFormat::JSON:
-        lang::reportJSONErrors(file, errors, maxErrors);
+        lang::reportJSONErrors(os, file, errors, maxErrors);
         break;
     }
 }
@@ -90,7 +91,8 @@ int main(int argc, char **argv) {
     const auto file = llvm::MemoryBuffer::getFile(inputFilename);
 
     if (!file) {
-        llvm::errs() << "Error: " << file.getError().message() << '\n';
+        llvm::errs() << "Error: while opening file " << inputFilename << ": "
+                     << file.getError().message() << '\n';
         return EXIT_FAILURE;
     }
 
@@ -111,7 +113,8 @@ int main(int argc, char **argv) {
     }
 
     if (!lexResult.errors.empty()) {
-        reportErrors(compilerErrorFormat, source, lexResult.errors);
+        reportErrors(llvm::errs(), compilerErrorFormat, source,
+                     lexResult.errors);
         return EXIT_FAILURE;
     }
 
@@ -126,7 +129,7 @@ int main(int argc, char **argv) {
     lang::Parser parser(arena, typeCtx, lexResult.tokens);
 
     const auto parseResult = parser.parseModuleAST();
-    DEBUG("%lu allocations in %lu bytes", arena.totalAllocations(),
+    DEBUG("%lu alloc() with %lu bytes", arena.totalAllocations(),
           arena.totalAllocated());
 
     if (compilerEmitAction == CompilerEmitAction::Src) {
@@ -139,7 +142,8 @@ int main(int argc, char **argv) {
     }
 
     if (!parseResult.errors.empty()) {
-        reportErrors(compilerErrorFormat, source, parseResult.errors);
+        reportErrors(llvm::errs(), compilerErrorFormat, source,
+                     parseResult.errors);
         return EXIT_FAILURE;
     }
 
@@ -149,6 +153,15 @@ int main(int argc, char **argv) {
 
     lang::ModuleAST *module = parseResult.module;
 
+    lang::CFA controlFlowAnalyzer;
+    const auto cfaResult = controlFlowAnalyzer.analyzeModuleAST(*module);
+
+    if (!cfaResult.errors.empty()) {
+        reportErrors(llvm::errs(), compilerErrorFormat, source,
+                     cfaResult.errors);
+        return EXIT_FAILURE;
+    }
+
     lang::Resolver resolver;
     const auto resolveResult = resolver.resolveModuleAST(*module);
 
@@ -157,19 +170,21 @@ int main(int argc, char **argv) {
     }
 
     if (!resolveResult.errors.empty()) {
-        reportErrors(compilerErrorFormat, source, resolveResult.errors);
+        reportErrors(llvm::errs(), compilerErrorFormat, source,
+                     resolveResult.errors);
         return EXIT_FAILURE;
     }
 
-    lang::Sema sema(typeCtx);
-    const auto semaResult = sema.analyzeModuleAST(*module);
+    lang::TypeChecker typeChecker(typeCtx);
+    const auto typeCheckerResult = typeChecker.analyzeModuleAST(*module);
 
     if (compilerEmitAction == CompilerEmitAction::AST) {
         astPrinter.visit(*module);
     }
 
     if (!resolveResult.errors.empty()) {
-        reportErrors(compilerErrorFormat, source, semaResult.errors);
+        reportErrors(llvm::errs(), compilerErrorFormat, source,
+                     typeCheckerResult.errors);
         return EXIT_FAILURE;
     }
 }

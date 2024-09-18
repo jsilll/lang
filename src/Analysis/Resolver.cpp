@@ -1,5 +1,4 @@
-#include "Sema/Resolver.h"
-#include "AST/AST.h"
+#include "Analysis/Resolver.h"
 
 #include <cassert>
 
@@ -7,20 +6,17 @@ namespace lang {
 
 TextError ResolveError::toTextError() const {
     switch (kind) {
-    case ResolveErrorKind::InvalidBreakStmt:
-        return {span, "Invalid break statement", "Does not break anything"};
-    case ResolveErrorKind::UnresolvedIdentifier:
-        return {span, "Unresolved identifier", "Cannot be resolved"};
+    case ResolveErrorKind::UnknownIdentifier:
+        return {span, "Unknown identifier", "Unknown identifier"};
     }
-    return {span, "Unknown resolve error title", "Unknown resolve error label"};
+    return {span, "Unknown resolution error title",
+            "Unknown resolve error label"};
 }
 
 JSONError ResolveError::toJSONError() const {
     switch (kind) {
-    case ResolveErrorKind::InvalidBreakStmt:
-        return {span, "resolve-invalid-break-stmt"};
-    case ResolveErrorKind::UnresolvedIdentifier:
-        return {span, "resolve-unresolved-identifier"};
+    case ResolveErrorKind::UnknownIdentifier:
+        return {span, "resolve-unknown-identifier"};
     }
     return {span, "resolve-unknown-error"};
 }
@@ -62,15 +58,6 @@ void Resolver::visit(FunctionDeclAST &node) {
 
 void Resolver::visit(ExprStmtAST &node) { ASTVisitor::visit(*node.expr); }
 
-void Resolver::visit(BreakStmtAST &node) {
-    if (breakableStack.empty()) {
-        errors.push_back({ResolveErrorKind::InvalidBreakStmt, node.span});
-        return;
-    }
-
-    node.stmt = breakableStack.top();
-}
-
 void Resolver::visit(ReturnStmtAST &node) {
     if (node.expr != nullptr) {
         ASTVisitor::visit(*node.expr);
@@ -108,9 +95,7 @@ void Resolver::visit(IfStmtAST &node) {
 
 void Resolver::visit(WhileStmtAST &node) {
     ASTVisitor::visit(*node.cond);
-    breakableStack.push(&node);
     visit(*node.body);
-    breakableStack.pop();
 }
 
 void Resolver::visit(IdentifierExprAST &node) {
@@ -122,14 +107,12 @@ void Resolver::visit(IdentifierExprAST &node) {
 
     const auto it = functionsMap.find(node.span);
     if (it == functionsMap.end()) {
-        errors.push_back({ResolveErrorKind::UnresolvedIdentifier, node.span});
+        errors.push_back({ResolveErrorKind::UnknownIdentifier, node.span});
         return;
     }
 
     node.decl = it->second;
 }
-
-void Resolver::visit(NumberExprAST &node) { /* no-op */ }
 
 void Resolver::visit(UnaryExprAST &node) { ASTVisitor::visit(*node.expr); }
 

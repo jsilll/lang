@@ -12,9 +12,9 @@
 #ifndef NDEBUG
 #define DEBUG(...)                                                             \
     do {                                                                       \
-        fprintf(stderr, "[%s:%d] ", __FILE__, __LINE__);                       \
-        fprintf(stderr, __VA_ARGS__);                                          \
-        fprintf(stderr, "\n");                                                 \
+        fprintf(stdout, "[%s:%d] ", __FILE__, __LINE__);                       \
+        fprintf(stdout, __VA_ARGS__);                                          \
+        fprintf(stdout, "\n");                                                 \
     } while (0)
 #else
 #define DEBUG(...)
