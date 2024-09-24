@@ -107,14 +107,14 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (lexResult.tokens.empty()) {
-        llvm::errs() << "Error: empty file provided\n";
-        return EXIT_FAILURE;
-    }
-
     if (!lexResult.errors.empty()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      lexResult.errors);
+        return EXIT_FAILURE;
+    }
+
+    if (lexResult.tokens.empty()) {
+        llvm::errs() << "Error: empty file provided\n";
         return EXIT_FAILURE;
     }
 

@@ -86,7 +86,7 @@ JSONError ParseError::toJSONError() const {
     case ParseErrorKind::UnexpectedEOF:
         return {span, "parse-unexpected-eof"};
     case ParseErrorKind::UnexpectedToken:
-        return {span, "parse-unexpeected-token"};
+        return {span, "parse-unexpected-token"};
     case ParseErrorKind::ExpectedType:
         return {span, "parse-expected-type"};
     case ParseErrorKind::ExpectedPrimaryExpression:

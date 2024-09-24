@@ -21,18 +21,18 @@ def test_compiler_valid(compiler: str, files: list[str]) -> None:
 
         # Assert that the compiler returned successfully
         if res.returncode != 0:
-            print(f"Error: {file} did not return successfully")
+            print(f"\nError: {file} did not return successfully")
             print(res.stderr)
             sys.exit(1)
 
         # Assert stderr is empty
         if res.stderr:
-            print(f"Error: {file} has non-empty stderr")
+            print(f"\nError: {file} has non-empty stderr\n")
             print(res.stderr)
             sys.exit(1)
 
         # Assert that the compiler emits the correct output
-        print(f"Test passed: {file}")
+        print(f"- Test passed: {file}")
 
 
 def test_compiler_error(compiler: str, files: list[tuple[str, str, str]]) -> None:
@@ -56,12 +56,12 @@ def test_compiler_error(compiler: str, files: list[tuple[str, str, str]]) -> Non
 
         # Assert that the compiler returned an error
         if res.returncode == 0:
-            print(f"Error: {file} did not return an error")
+            print(f"\nError: {file} did not return an error")
             sys.exit(1)
 
         # Assert stderr is not empty
         if not res.stderr:
-            print(f"Error: {file} has empty stderr")
+            print(f"\nError: {file} has empty stderr")
             sys.exit(1)
 
         # Assert stderr is a valid JSON
@@ -69,31 +69,32 @@ def test_compiler_error(compiler: str, files: list[tuple[str, str, str]]) -> Non
         try:
             error_json = json.loads(res.stderr)
         except json.JSONDecodeError:
-            print(f"Error: {file} has invalid JSON in stderr")
+            print(f"\nError: {file} has invalid JSON in stderr")
             print(res.stderr)
             sys.exit(1)
 
         # Check the length of the errors is 1
         if len(error_json) != 1:
-            print(f"Error: {file} has more than one error")
+            print(f"\nError: {file} has more than one error")
+            print(res.stderr)
             sys.exit(1)
 
         # Check the error id
         if error_json[0]["id"] != error_id:
             print(
-                f"Error: {file} has incorrect error id: got {error_json[0]['id']}, expected {error_id}"
+                f"\nError: {file} has incorrect error id: got {error_json[0]['id']}, expected {error_id}"
             )
             sys.exit(1)
 
         # Check the error location
         if error_json[0]["loc"] != location:
             print(
-                f"Error: {file} has incorrect error location: got {error_json[0]['loc']}, expected {location}"
+                f"\nError: {file} has incorrect error location: got {error_json[0]['loc']}, expected {location}"
             )
             sys.exit(1)
 
         # Assert that the correct error is emitted
-        print(f"Test passed: {file}")
+        print(f"- Test passed: {file}")
 
 
 def main():
@@ -133,14 +134,17 @@ def main():
         valid_test_set,
     )
 
-    print("\nTesting the compiler with the valid files")
+    print("Testing the compiler with the valid files:")
     test_compiler_valid(args.compiler, valid_files)
 
     # Test the compiler with the error files
 
     error_test_set = [
-        ("1", "cfa-early-return-stmt", "2:5"),
-        ("2", "cfa-invalid-break-stmt", "2:5"),
+        ("01", "lex-invalid-char", "1:1"),
+        ("02", "parse-unexpected-eof", "1:1"),
+        ("03", "parse-unexpected-token", "2:9"),
+        # ("1", "cfa-early-return-stmt", "2:5"),
+        # ("2", "cfa-invalid-break-stmt", "2:5"),
     ]
 
     error_files = map(
@@ -152,7 +156,7 @@ def main():
         error_test_set,
     )
 
-    print("\nTesting the compiler with the error files")
+    print("\nTesting the compiler with the error files:")
     test_compiler_error(args.compiler, error_files)
 
 

@@ -41,7 +41,7 @@ TextError LexError::toTextError() const {
 JSONError LexError::toJSONError() const {
     switch (kind) {
     case LexErrorKind::InvalidCharacter:
-        return {span, "lex-invalid-character"};
+        return {span, "lex-invalid-char"};
     }
     return {span, "lex-unknown-error"};
 }
