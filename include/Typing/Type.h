@@ -1,7 +1,7 @@
 #ifndef LANG_TYPE_H
 #define LANG_TYPE_H
 
-#include <string>
+#include "ADT/NonOwningList.h"
 
 namespace lang {
 
@@ -15,17 +15,24 @@ enum class TypeKind {
 struct Type {
     TypeKind kind;
     explicit Type(TypeKind kind) : kind(kind) {}
+
     std::string toString() const;
-    template<typename T> T& as() { return static_cast<T&>(this); }
-    template<typename T> const T& as() { return static_cast<const T&>(this); }
+
+    template <typename T> T *as() { return static_cast<T *>(this); }
+    template <typename T> const T *as() const {
+        return static_cast<const T *>(this);
+    }
 };
 
 struct PointerType : public Type {
-    PointerType() : Type(TypeKind::Pointer) {}
+    Type *pointee;
+    PointerType(Type *pointee) : Type(TypeKind::Pointer), pointee(pointee) {}
 };
 
 struct FunctionType : public Type {
-    FunctionType() : Type(TypeKind::Function) {}
+    NonOwningList<Type *> arrows;
+    FunctionType(NonOwningList<Type *> arrows)
+        : Type(TypeKind::Function), arrows(arrows) {}
 };
 
 } // namespace lang

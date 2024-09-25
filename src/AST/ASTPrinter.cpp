@@ -49,10 +49,10 @@ void ASTPrinter::visit(const ExprStmtAST &node) {
 void ASTPrinter::visit(const BreakStmtAST &node) {
     INDENT();
     os << "BreakStmtAST: ";
-    if (node.stmt == nullptr) {
+    if (node.target == nullptr) {
         os << "(unresolved)\n";
     } else {
-        os << "StmtAST(" << static_cast<const void *>(node.stmt) << ")\n";
+        os << "StmtAST(" << static_cast<const void *>(node.target) << ")\n";
     }
 }
 
@@ -96,9 +96,9 @@ void ASTPrinter::visit(const IfStmtAST &node) {
     INDENT();
     os << "IfStmtAST\n";
     ASTVisitor::visit(*node.cond);
-    visit(*node.thenBranch);
-    if (node.elseBranch != nullptr) {
-        ASTVisitor::visit(*node.elseBranch);
+    visit(*node.thenStmt);
+    if (node.elseStmt != nullptr) {
+        ASTVisitor::visit(*node.elseStmt);
     }
 }
 

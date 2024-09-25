@@ -40,7 +40,7 @@ void CFA::visit(BreakStmtAST &node) {
         return;
     }
 
-    node.stmt = breakableStack.top();
+    node.target = breakableStack.top();
 }
 
 void CFA::visit(BlockStmtAST &node) {
@@ -60,9 +60,9 @@ void CFA::visit(BlockStmtAST &node) {
 }
 
 void CFA::visit(IfStmtAST &node) {
-    ASTVisitor::visit(*node.thenBranch);
-    if (node.elseBranch != nullptr) {
-        ASTVisitor::visit(*node.elseBranch);
+    ASTVisitor::visit(*node.thenStmt);
+    if (node.elseStmt != nullptr) {
+        ASTVisitor::visit(*node.elseStmt);
     }
 }
 

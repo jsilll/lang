@@ -105,10 +105,10 @@ void TypeChecker::visit(BlockStmtAST &node) {
 
 void TypeChecker::visit(IfStmtAST &node) {
     ASTVisitor::visit(*node.cond);
-    ASTVisitor::visit(*node.thenBranch);
+    ASTVisitor::visit(*node.thenStmt);
 
-    if (node.elseBranch != nullptr) {
-        ASTVisitor::visit(*node.elseBranch);
+    if (node.elseStmt != nullptr) {
+        ASTVisitor::visit(*node.elseStmt);
     }
 }
 

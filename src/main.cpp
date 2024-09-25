@@ -13,6 +13,9 @@
 #include "Analysis/Resolver.h"
 #include "Analysis/TypeChecker.h"
 
+#include "Codegen/Codegen.h"
+
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -34,6 +37,7 @@ enum class CompilerEmitAction {
     Lex,
     Src,
     AST,
+    LLVM,
 };
 
 const llvm::cl::opt<std::string>
@@ -64,7 +68,9 @@ const llvm::cl::opt<CompilerEmitAction> compilerEmitAction(
         clEnumValN(CompilerEmitAction::Src, "src",
                    "Emit the original source code of the input file"),
         clEnumValN(CompilerEmitAction::AST, "ast",
-                   "Emit the abstract syntax tree of the input file")),
+                   "Emit the abstract syntax tree of the input file"),
+        clEnumValN(CompilerEmitAction::LLVM, "llvm",
+                   "Emit the LLVM IR of the input file")),
     llvm::cl::init(CompilerEmitAction::None));
 
 template <typename T>
@@ -187,4 +193,18 @@ int main(int argc, char **argv) {
                      typeCheckerResult.errors);
         return EXIT_FAILURE;
     }
+
+    lang::Codegen codegen;
+    const llvm::Module *llvmModule = codegen.generate(*module);
+
+    if (compilerEmitAction == CompilerEmitAction::LLVM) {
+        llvmModule->print(llvm::outs(), nullptr);
+    }
+
+    if (llvm::verifyModule(*llvmModule, &llvm::errs())) {
+        llvm::errs() << "Error: generated LLVM IR is invalid\n";
+        return EXIT_FAILURE;
+    }
+    
+    return EXIT_SUCCESS;
 }

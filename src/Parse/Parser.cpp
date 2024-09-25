@@ -344,10 +344,10 @@ IfStmtAST *Parser::parseIfStmtAST() {
     ExprAST *cond = parseExprAST();
     RETURN_IF_NULL(cond);
 
-    BlockStmtAST *thenBranch = parseBlockStmtAST();
-    RETURN_IF_NULL(thenBranch);
+    BlockStmtAST *thenStmt = parseBlockStmtAST();
+    RETURN_IF_NULL(thenStmt);
 
-    StmtAST *elseBranch = nullptr;
+    StmtAST *elseStmt = nullptr;
 
     const Token *elseToken = peek();
     if (elseToken != nullptr && elseToken->kind == TokenKind::KwElse) {
@@ -355,15 +355,15 @@ IfStmtAST *Parser::parseIfStmtAST() {
 
         const Token *ifToken = peek();
         if (ifToken != nullptr && ifToken->kind == TokenKind::KwIf) {
-            elseBranch = parseIfStmtAST();
+            elseStmt = parseIfStmtAST();
         } else {
-            elseBranch = parseBlockStmtAST();
+            elseStmt = parseBlockStmtAST();
         }
 
-        RETURN_IF_NULL(elseBranch);
+        RETURN_IF_NULL(elseStmt);
     }
 
-    return arena->alloc<IfStmtAST>(tok->span, cond, thenBranch, elseBranch);
+    return arena->alloc<IfStmtAST>(tok->span, cond, thenStmt, elseStmt);
 }
 
 WhileStmtAST *Parser::parseWhileStmtAST() {

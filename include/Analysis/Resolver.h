@@ -30,12 +30,10 @@ class Resolver : public MutableASTVisitor<Resolver> {
     friend class ASTVisitor<Resolver, false>;
 
   public:
-    Resolver() : deepResolution(false) {}
-
     ResolveResult resolveModuleAST(ModuleAST &module);
 
   private:
-    bool deepResolution;
+    bool deepResolution = false;
     std::unordered_map<std::string_view, FunctionDeclAST *> functionsMap;
     std::vector<std::unordered_map<std::string_view, LocalStmtAST *>> localsMap;
     std::vector<ResolveError> errors;

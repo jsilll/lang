@@ -124,7 +124,7 @@ struct BinaryExprAST : public ExprAST {
 
 struct CallExprAST : public ExprAST {
     ExprAST *callee;
-    ExprAST *arg;
+    ExprAST *arg; // TODO: support multiple arguments
     // NOLINTNEXTLINE
     CallExprAST(std::string_view span, ExprAST *callee, ExprAST *arg)
         : ExprAST(ExprASTKind::Call, span), callee(callee), arg(arg) {}
@@ -153,9 +153,9 @@ struct ExprStmtAST : public StmtAST {
 };
 
 struct BreakStmtAST : public StmtAST {
-    StmtAST *stmt;
+    StmtAST *target;
     explicit BreakStmtAST(std::string_view span)
-        : StmtAST(StmtASTKind::Break, span), stmt(nullptr) {}
+        : StmtAST(StmtASTKind::Break, span), target(nullptr) {}
 };
 
 struct ReturnStmtAST : public StmtAST {
@@ -189,12 +189,12 @@ struct BlockStmtAST : public StmtAST {
 
 struct IfStmtAST : public StmtAST {
     ExprAST *cond;
-    BlockStmtAST *thenBranch;
-    StmtAST *elseBranch;
-    IfStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *thenBranch,
-              StmtAST *elseBranch)
-        : StmtAST(StmtASTKind::If, span), cond(cond), thenBranch(thenBranch),
-          elseBranch(elseBranch) {}
+    BlockStmtAST *thenStmt;
+    StmtAST *elseStmt;
+    IfStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *thenStmt,
+              StmtAST *elseStmt)
+        : StmtAST(StmtASTKind::If, span), cond(cond), thenStmt(thenStmt),
+          elseStmt(elseStmt) {}
 };
 
 struct WhileStmtAST : public StmtAST {

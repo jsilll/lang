@@ -3,6 +3,7 @@
 // Unambiguous syntax, modern and easy to parse syntax with elements
 // inspired by C, Kotlin, Rust, and Swift.
 fn main(): void {
+    1;
     println(0);
 }
 
