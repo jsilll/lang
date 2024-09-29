@@ -4,16 +4,9 @@
 
 namespace lang {
 
-constexpr std::size_t alignUp(std::size_t size, std::size_t align) {
-    return (size + align - 1) & ~(align - 1);
-}
-
-} // namespace lang
-
-namespace lang {
-
 void *Arena::allocInternal(std::size_t size) {
-    size = alignUp(size, alignof(max_align_t));
+    constexpr auto alignMask = alignof(max_align_t) - 1;
+    size = (size + alignMask) & ~alignMask;
 
     if (allocSize + size > block.size) {
         if (block.data != nullptr) {
@@ -29,7 +22,7 @@ void *Arena::allocInternal(std::size_t size) {
         }
 
         if (block.data == nullptr) {
-            block = Block{std::max(size, defaultSize)};
+            block = Block(std::max(size, defaultSize));
         }
 
         allocSize = 0;

@@ -56,6 +56,9 @@ std::string tokenKindToString(TokenKind kind);
 struct Token {
     TokenKind kind;
     std::string_view span;
+
+    Token(TokenKind kind, std::string_view span) : kind(kind), span(span) {}
+
     std::string toString() const;
 };
 

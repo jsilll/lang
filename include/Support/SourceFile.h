@@ -12,6 +12,12 @@ struct SourceLocation {
     std::size_t column;
     std::string_view filename;
     std::string_view lineText;
+
+    // NOLINTNEXTLINE
+    SourceLocation(std::size_t line, std::size_t column,
+                   // NOLINTNEXTLINE
+                   std::string_view filename, std::string_view lineText)
+        : line(line), column(column), filename(filename), lineText(lineText) {}
 };
 
 class SourceFile {

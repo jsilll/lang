@@ -2,41 +2,43 @@
 #define LANG_REPORTING_H
 
 #include "SourceFile.h"
+#include "Utilities.h"
 
 #include "llvm/Support/raw_ostream.h"
 
 namespace lang {
 
-// TODO: Move this to a different file
-constexpr unsigned getNumDigits(unsigned n) {
-    unsigned digits = 0;
-    while (n) {
-        n /= 10;
-        ++digits;
-    }
-    return digits;
-}
-
 struct TextError {
     std::string_view span;
     std::string_view title;
     std::string label;
+
+    // NOLINTNEXTLINE
+    TextError(std::string_view span, std::string_view title,
+              std::string_view label)
+        : span(span), title(title), label(label) {}
+};
+
+struct JSONError {
+    std::string_view span;
+    std::string_view title;
+
+    // NOLINTNEXTLINE
+    JSONError(std::string_view span, std::string_view title)
+        : span(span), title(title) {}
 };
 
 void reportTextError(llvm::raw_ostream &os, const SourceFile &file,
                      const TextError &error, unsigned lineNoWidthHint = 0);
 
-struct JSONError {
-    std::string_view span;
-    std::string_view title;
-};
-
 void reportJSONError(llvm::raw_ostream &os, const SourceFile &file,
                      const JSONError &error);
 
 /// @brief Reports a vector of errors in batch in plain text
-/// @pre errors only contains errors from the same file
-/// @pre errors is sorted in the order of appearence within the file
+/// @note To make proper use of this function, the following preconditions must
+/// be met:
+///        - errors only contains errors from the same file
+///        - errors is sorted in the order of appearence within the file
 template <typename T>
 void reportTextErrors(
     llvm::raw_ostream &os, const SourceFile &file, const std::vector<T> &errors,
@@ -47,7 +49,7 @@ void reportTextErrors(
     }
 
     const std::size_t maxLine = file.getLocation(errors.back().span).line;
-    const unsigned lineNoMaxWidth = getNumDigits(maxLine);
+    const unsigned lineNoMaxWidth = numDigits(maxLine);
     const std::string lineNoSpacesBody = std::string(lineNoMaxWidth + 2, ' ');
 
     const std::size_t lastButOne = maxErrors - 1;

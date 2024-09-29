@@ -1,4 +1,5 @@
 #include "Analysis/TypeChecker.h"
+#include "ADT/NonOwningList.h"
 
 namespace {
 
@@ -14,19 +15,20 @@ namespace lang {
 
 TextError TypeCheckerError::toTextError() const {
     switch (kind) {
-    case TypeCheckerErrorKind::InvalidReturn:
+    case TypeCheckerErrorKind::InvalidReturnStmt:
         return {span, "Invalid return statement", "Return type mismatch"};
     case TypeCheckerErrorKind::InvalidAssignment:
         return {span, "Invalid assignment", "Type mismatch"};
     case TypeCheckerErrorKind::InvalidBinaryOperation:
         return {span, "Invalid binary operation", "Type mismatch"};
     }
-    return {span, "Unknown type checking error title", "Unknown type checking error label"};
+    return {span, "Unknown type checking error title",
+            "Unknown type checking error label"};
 }
 
 JSONError TypeCheckerError::toJSONError() const {
     switch (kind) {
-    case TypeCheckerErrorKind::InvalidReturn:
+    case TypeCheckerErrorKind::InvalidReturnStmt:
         return {span, "type-check-invalid-return"};
     case TypeCheckerErrorKind::InvalidAssignment:
         return {span, "type-check-invalid-assignment"};
@@ -55,16 +57,16 @@ void TypeChecker::visit(ReturnStmtAST &node) {
         ASTVisitor::visit(*node.expr);
     }
 
-    if (currentFunction->retType == nullptr) {
-        if (node.expr != nullptr) {
-            errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
-        }
+    if (currentFunction->retType == nullptr && node.expr != nullptr) {
+        errors.push_back({TypeCheckerErrorKind::InvalidReturnStmt, node.span});
     } else {
         if (node.expr == nullptr) {
-            errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
+            errors.push_back(
+                {TypeCheckerErrorKind::InvalidReturnStmt, node.span});
         } else {
             if (node.expr->type != currentFunction->retType) {
-                errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
+                errors.push_back(
+                    {TypeCheckerErrorKind::InvalidReturnStmt, node.span});
             }
         }
     }
@@ -78,12 +80,14 @@ void TypeChecker::visit(LocalStmtAST &node) {
             node.type = node.init->type;
         } else {
             if (node.type != node.init->type) {
-                errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
+                errors.push_back(
+                    {TypeCheckerErrorKind::InvalidAssignment, node.span});
             }
         }
     } else {
         if (node.type == nullptr) {
-            errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
+            errors.push_back(
+                {TypeCheckerErrorKind::InvalidAssignment, node.span});
         }
     }
 }
@@ -118,17 +122,18 @@ void TypeChecker::visit(WhileStmtAST &node) {
 }
 
 void TypeChecker::visit(IdentifierExprAST &node) {
-    std::visit(
-        Overloaded{
-            [&](const std::monostate) {},
-            [&](const LocalStmtAST *stmt) { node.type = stmt->type; },
-            // TODO: here the type should be function pointer
-            [&](const FunctionDeclAST *decl) { node.type = decl->retType; },
-        },
-        node.decl);
+    std::visit(Overloaded{
+                   [&](const std::monostate) { node.type = nullptr; },
+                   [&](const LocalStmtAST *stmt) { node.type = stmt->type; },
+                   // TODO: continue
+                   [&](const FunctionDeclAST *decl) { node.type = decl->type; },
+               },
+               node.decl);
 }
 
-void TypeChecker::visit(NumberExprAST &node) { node.type = typeCtx.getTypeNumber(); }
+void TypeChecker::visit(NumberExprAST &node) {
+    node.type = typeCtx->getTypeNumber();
+}
 
 void TypeChecker::visit(UnaryExprAST &node) {
     ASTVisitor::visit(*node.expr);
@@ -141,7 +146,8 @@ void TypeChecker::visit(BinaryExprAST &node) {
     ASTVisitor::visit(*node.rhs);
 
     if (node.lhs->type != node.rhs->type) {
-        errors.push_back({TypeCheckerErrorKind::InvalidBinaryOperation, node.span});
+        errors.push_back(
+            {TypeCheckerErrorKind::InvalidBinaryOperation, node.span});
     }
 
     node.type = node.lhs->type;
@@ -149,7 +155,9 @@ void TypeChecker::visit(BinaryExprAST &node) {
 
 void TypeChecker::visit(CallExprAST &node) {
     ASTVisitor::visit(*node.callee);
-    ASTVisitor::visit(*node.arg);
+    for (auto &arg : node.args) {
+        ASTVisitor::visit(*arg);
+    }
 
     // TODO: Verify that the callee is a function and that the argument types
     // match the parameter types

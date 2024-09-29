@@ -7,7 +7,7 @@ void reportTextError(llvm::raw_ostream &os, const SourceFile &file,
                      const TextError &error, unsigned lineNoWidthHint) {
     assert(!error.span.empty() && "span cannot be empty");
     const SourceLocation loc = file.getLocation(error.span);
-    const unsigned lineNoWidth = getNumDigits(loc.line);
+    const unsigned lineNoWidth = numDigits(loc.line);
     const unsigned lineNoMaxWidth = std::max(lineNoWidth, lineNoWidthHint);
     const std::string lineNoSpacesTitle(lineNoMaxWidth + 1, ' ');
     const std::string lineNoSpacesBody(lineNoMaxWidth + 2, ' ');
