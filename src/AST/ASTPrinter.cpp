@@ -112,8 +112,7 @@ void ASTPrinter::visit(const WhileStmtAST &node) {
 void ASTPrinter::visit(const IdentifierExprAST &node) {
     INDENT();
     os << "IdentifierExprAST: " << node.span;
-    std::visit(Overloaded{[&](const std::monostate) {},
-                          [&](const LocalStmtAST *stmt) {
+    std::visit(Overloaded{[&](const LocalStmtAST *stmt) {
                               os << " => LocalStmtAST("
                                  << static_cast<const void *>(stmt) << ')';
                           },

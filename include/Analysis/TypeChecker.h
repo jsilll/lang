@@ -33,12 +33,15 @@ class TypeChecker : public MutableASTVisitor<TypeChecker> {
     friend class ASTVisitor<TypeChecker, false>;
 
   public:
-    TypeChecker(TypeContext &typeCtx) : typeCtx(typeCtx), currentFunction(nullptr) {}
+    TypeChecker(TypeContext &typeCtx)
+        : typeCtx(&typeCtx), arena(typeCtx.getArena()),
+          currentFunction(nullptr) {}
 
     TypeCheckerResult analyzeModuleAST(ModuleAST &module);
 
   private:
-    TypeContext &typeCtx;
+    TypeContext *typeCtx;
+    Arena *arena;
     FunctionDeclAST *currentFunction;
     std::vector<TypeCheckerError> errors;
 

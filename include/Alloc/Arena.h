@@ -1,6 +1,7 @@
 #ifndef LANG_ARENA_H
 #define LANG_ARENA_H
 
+#include <cstddef>
 #include <list>
 #include <memory>
 
@@ -45,6 +46,14 @@ class Arena {
     void reset() {
         allocSize = 0;
         avail.splice(avail.begin(), used);
+    }
+
+    template <typename T> void dealloc(T *ptr) {
+        static_assert(std::is_trivially_destructible_v<T>,
+                      "T must be trivially destructible");
+        std::byte *start = block.data.get() + allocSize - sizeof(T);
+        assert(reinterpret_cast<T *>(start) == ptr);
+        allocSize -= sizeof(T);
     }
 
     template <typename T, typename... Args> T *alloc(Args &&...args) {

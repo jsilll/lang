@@ -220,7 +220,7 @@ struct FunctionDeclAST : public DeclAST {
 /// === Identifier Expressions ===
 
 using IdentifierDecl =
-    std::variant<std::monostate, LocalStmtAST *, FunctionDeclAST *>;
+    std::variant<LocalStmtAST *, FunctionDeclAST *>;
 
 struct IdentifierExprAST : public ExprAST {
     IdentifierDecl decl;

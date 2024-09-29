@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
     lang::Parser parser(arena, typeCtx, lexResult.tokens);
 
     const auto parseResult = parser.parseModuleAST();
-    DEBUG("%lu alloc() with %lu bytes", arena.totalAllocations(),
+    DEBUG("%lu allocation(s) with %lu bytes", arena.totalAllocations(),
           arena.totalAllocated());
 
     if (compilerEmitAction == CompilerEmitAction::Src) {
@@ -183,6 +183,7 @@ int main(int argc, char **argv) {
 
     lang::TypeChecker typeChecker(typeCtx);
     const auto typeCheckerResult = typeChecker.analyzeModuleAST(*module);
+    DEBUG("%lu custom type(s) created", typeCtx.getNumTypes());
 
     if (compilerEmitAction == CompilerEmitAction::AST) {
         astPrinter.visit(*module);
