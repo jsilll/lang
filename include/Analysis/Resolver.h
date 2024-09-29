@@ -16,14 +16,22 @@ enum class ResolveErrorKind {
 struct ResolveError {
     ResolveErrorKind kind;
     std::string_view span;
+
     ResolveError(ResolveErrorKind kind, std::string_view span)
         : kind(kind), span(span) {}
+
     TextError toTextError() const;
+
     JSONError toJSONError() const;
 };
 
 struct ResolveResult {
     std::vector<ResolveError> errors;
+
+    ResolveResult(std::vector<ResolveError> errors)
+        : errors(std::move(errors)) {}
+
+    [[nodiscard]] bool hasErrors() const { return !errors.empty(); }
 };
 
 class Resolver : public MutableASTVisitor<Resolver> {

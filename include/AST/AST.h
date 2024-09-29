@@ -54,6 +54,7 @@ struct ExprAST {
     ExprASTKind kind;
     std::string_view span;
     Type *type;
+
     ExprAST(ExprASTKind kind, std::string_view span)
         : kind(kind), span(span), type(nullptr) {}
 };
@@ -74,6 +75,7 @@ enum class StmtASTKind {
 struct StmtAST {
     StmtASTKind kind;
     std::string_view span;
+
     StmtAST(StmtASTKind kind, std::string_view span) : kind(kind), span(span) {}
 };
 
@@ -86,6 +88,7 @@ enum class DeclASTKind {
 struct DeclAST {
     DeclASTKind kind;
     std::string_view ident;
+
     DeclAST(DeclASTKind kind, std::string_view ident)
         : kind(kind), ident(ident) {}
 };
@@ -95,6 +98,7 @@ struct DeclAST {
 struct ModuleAST {
     std::string_view ident;
     NonOwningList<DeclAST *> decls;
+
     ModuleAST(std::string_view ident, NonOwningList<DeclAST *> decls)
         : ident(ident), decls(decls) {}
 };
@@ -109,6 +113,7 @@ struct NumberExprAST : public ExprAST {
 struct UnaryExprAST : public ExprAST {
     UnOpKind op;
     ExprAST *expr;
+
     UnaryExprAST(std::string_view span, UnOpKind op, ExprAST *expr)
         : ExprAST(ExprASTKind::Unary, span), op(op), expr(expr) {}
 };
@@ -117,6 +122,7 @@ struct BinaryExprAST : public ExprAST {
     BinOpKind op;
     ExprAST *lhs;
     ExprAST *rhs;
+
     BinaryExprAST(std::string_view span, BinOpKind op, ExprAST *lhs,
                   ExprAST *rhs)
         : ExprAST(ExprASTKind::Binary, span), op(op), lhs(lhs), rhs(rhs) {}
@@ -124,15 +130,17 @@ struct BinaryExprAST : public ExprAST {
 
 struct CallExprAST : public ExprAST {
     ExprAST *callee;
-    ExprAST *arg; // TODO: support multiple arguments
-    // NOLINTNEXTLINE
-    CallExprAST(std::string_view span, ExprAST *callee, ExprAST *arg)
-        : ExprAST(ExprASTKind::Call, span), callee(callee), arg(arg) {}
+    NonOwningList<ExprAST *> args;
+
+    CallExprAST(std::string_view span, ExprAST *callee,
+                NonOwningList<ExprAST *> args)
+        : ExprAST(ExprASTKind::Call, span), callee(callee), args(args) {}
 };
 
 struct IndexExprAST : public ExprAST {
     ExprAST *base;
     ExprAST *index;
+
     // NOLINTNEXTLINE
     IndexExprAST(std::string_view span, ExprAST *base, ExprAST *index)
         : ExprAST(ExprASTKind::Index, span), base(base), index(index) {}
@@ -140,6 +148,7 @@ struct IndexExprAST : public ExprAST {
 
 struct GroupedExprAST : public ExprAST {
     ExprAST *expr;
+
     GroupedExprAST(std::string_view span, ExprAST *expr)
         : ExprAST(ExprASTKind::Grouped, span), expr(expr) {}
 };
@@ -148,18 +157,21 @@ struct GroupedExprAST : public ExprAST {
 
 struct ExprStmtAST : public StmtAST {
     ExprAST *expr;
+
     ExprStmtAST(std::string_view span, ExprAST *expr)
         : StmtAST(StmtASTKind::Expr, span), expr(expr) {}
 };
 
 struct BreakStmtAST : public StmtAST {
     StmtAST *target;
+
     explicit BreakStmtAST(std::string_view span)
         : StmtAST(StmtASTKind::Break, span), target(nullptr) {}
 };
 
 struct ReturnStmtAST : public StmtAST {
     ExprAST *expr;
+
     ReturnStmtAST(std::string_view span, ExprAST *expr)
         : StmtAST(StmtASTKind::Return, span), expr(expr) {}
 };
@@ -168,6 +180,7 @@ struct LocalStmtAST : public StmtAST {
     bool isConst;
     Type *type;
     ExprAST *init;
+
     LocalStmtAST(bool isConst, std::string_view ident, Type *type,
                  ExprAST *init)
         : StmtAST(StmtASTKind::Local, ident), isConst(isConst), type(type),
@@ -177,12 +190,14 @@ struct LocalStmtAST : public StmtAST {
 struct AssignStmtAST : public StmtAST {
     ExprAST *lhs;
     ExprAST *rhs;
+
     AssignStmtAST(std::string_view span, ExprAST *lhs, ExprAST *rhs)
         : StmtAST(StmtASTKind::Assign, span), lhs(lhs), rhs(rhs) {}
 };
 
 struct BlockStmtAST : public StmtAST {
     NonOwningList<StmtAST *> stmts;
+
     BlockStmtAST(std::string_view span, NonOwningList<StmtAST *> stmts)
         : StmtAST(StmtASTKind::Block, span), stmts(stmts) {}
 };
@@ -191,6 +206,7 @@ struct IfStmtAST : public StmtAST {
     ExprAST *cond;
     BlockStmtAST *thenStmt;
     StmtAST *elseStmt;
+
     IfStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *thenStmt,
               StmtAST *elseStmt)
         : StmtAST(StmtASTKind::If, span), cond(cond), thenStmt(thenStmt),
@@ -200,6 +216,7 @@ struct IfStmtAST : public StmtAST {
 struct WhileStmtAST : public StmtAST {
     ExprAST *cond;
     BlockStmtAST *body;
+
     WhileStmtAST(std::string_view span, ExprAST *cond, BlockStmtAST *body)
         : StmtAST(StmtASTKind::While, span), cond(cond), body(body) {}
 };
@@ -210,11 +227,13 @@ struct FunctionDeclAST : public DeclAST {
     NonOwningList<LocalStmtAST *> params;
     Type *retType;
     BlockStmtAST *body;
+    Type *type;
+
     FunctionDeclAST(std::string_view ident,
                     NonOwningList<LocalStmtAST *> params, Type *retType,
                     BlockStmtAST *body)
         : DeclAST(DeclASTKind::Function, ident), params(params),
-          retType(retType), body(body) {}
+          retType(retType), body(body), type(nullptr) {}
 };
 
 /// === Identifier Expressions ===
@@ -224,6 +243,7 @@ using IdentifierDecl =
 
 struct IdentifierExprAST : public ExprAST {
     IdentifierDecl decl;
+
     explicit IdentifierExprAST(std::string_view span)
         : ExprAST(ExprASTKind::Identifier, span) {}
 };

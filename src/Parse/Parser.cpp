@@ -6,8 +6,8 @@ namespace {
 
 struct BinOpPair {
     lang::BinOpKind bind;
-    int precLHS;
-    int precRHS;
+    int precLhs;
+    int precRhs;
 };
 
 const std::unordered_set<lang::TokenKind> declLevelSyncSet = {
@@ -74,9 +74,8 @@ TextError ParseError::toTextError() const {
                 "Expected " + tokenKindToString(expected) + " instead"};
     case ParseErrorKind::ExpectedType:
         return {span, "Unexpected token", "Expected a type instead"};
-    case ParseErrorKind::ExpectedPrimaryExpression:
-        return {span, "Unexpected token",
-                "Expected a primary expression instead"};
+    case ParseErrorKind::ExpectedExpression:
+        return {span, "Unexpected token", "Expected an expression instead"};
     }
     return {span, "Unknown parsing error title", "Unknown parse error label"};
 }
@@ -89,7 +88,7 @@ JSONError ParseError::toJSONError() const {
         return {span, "parse-unexpected-token"};
     case ParseErrorKind::ExpectedType:
         return {span, "parse-expected-type"};
-    case ParseErrorKind::ExpectedPrimaryExpression:
+    case ParseErrorKind::ExpectedExpression:
         return {span, "parse-expected-primary-expr"};
     }
     return {span, "parser-unknown-error"};
@@ -399,8 +398,8 @@ StmtAST *Parser::parseExprStmtOrAssignStmtAST() {
 
     } break;
     default:
-        errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,
-                            tok->span, TokenKind::Amp);
+        errors.emplace_back(ParseErrorKind::ExpectedExpression, tok->span,
+                            TokenKind::Amp);
     }
 
     return nullptr;
@@ -416,10 +415,25 @@ ExprAST *Parser::parseExprAST(int prec) {
         case TokenKind::LParen: {
             ++cur;
 
-            ExprAST *arg = parseExprAST();
-            RETURN_IF_NULL(arg);
+            NonOwningList<ExprAST *> args;
 
-            lhs = arena->alloc<CallExprAST>(tok->span, lhs, arg);
+            const Token *argTok = peek();
+            while (argTok != nullptr && argTok->kind != TokenKind::RParen) {
+                ExprAST *arg = parseExprAST();
+                RETURN_IF_NULL(arg);
+
+                args.emplace_back(arena, arg);
+
+                argTok = peek();
+                if (argTok == nullptr || argTok->kind != TokenKind::Comma) {
+                    break;
+                }
+
+                ++cur;
+                argTok = peek();
+            }
+
+            lhs = arena->alloc<CallExprAST>(tok->span, lhs, args);
 
             EXPECT(TokenKind::RParen);
         } break;
@@ -440,12 +454,12 @@ ExprAST *Parser::parseExprAST(int prec) {
             if (it == binOpMap.end()) {
                 return lhs;
             }
-            if (it->second.precLHS <= prec) {
+            if (it->second.precLhs <= prec) {
                 return lhs;
             }
             ++cur;
             lhs = arena->alloc<BinaryExprAST>(tok->span, it->second.bind, lhs,
-                                              parseExprAST(it->second.precRHS));
+                                              parseExprAST(it->second.precRhs));
         }
 
         tok = peek();
@@ -480,8 +494,8 @@ ExprAST *Parser::parsePrimaryExprAST() {
         return arena->alloc<GroupedExprAST>(tok->span, expr);
 
     default:
-        errors.emplace_back(ParseErrorKind::ExpectedPrimaryExpression,
-                            tok->span, TokenKind::Amp);
+        errors.emplace_back(ParseErrorKind::ExpectedExpression, tok->span,
+                            TokenKind::Amp);
     }
 
     return nullptr;

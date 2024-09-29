@@ -123,7 +123,9 @@ void Resolver::visit(BinaryExprAST &node) {
 
 void Resolver::visit(CallExprAST &node) {
     ASTVisitor::visit(*node.callee);
-    ASTVisitor::visit(*node.arg);
+    for (auto *arg : node.args) {
+        ASTVisitor::visit(*arg);
+    }
 }
 
 void Resolver::visit(IndexExprAST &node) {

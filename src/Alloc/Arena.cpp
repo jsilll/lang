@@ -1,14 +1,8 @@
 #include "Alloc/Arena.h"
 
+#include "Support/Utilities.h"
+
 #include <cstdlib>
-
-namespace lang {
-
-constexpr std::size_t alignUp(std::size_t size, std::size_t align) {
-    return (size + align - 1) & ~(align - 1);
-}
-
-} // namespace lang
 
 namespace lang {
 

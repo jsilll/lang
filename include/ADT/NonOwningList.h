@@ -9,6 +9,7 @@ template <typename T> class NonOwningList {
     struct Node {
         T data;
         Node *next;
+
         explicit Node(const T &data) noexcept : data(data), next(nullptr) {}
     };
 
