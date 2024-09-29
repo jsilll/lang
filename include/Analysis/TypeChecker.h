@@ -21,24 +21,37 @@ enum class TypeCheckerErrorKind {
 struct TypeCheckerError {
     TypeCheckerErrorKind kind;
     std::string_view span;
+
+    TypeCheckerError(TypeCheckerErrorKind kind, std::string_view span)
+        : kind(kind), span(span) {}
+
     TextError toTextError() const;
+
     JSONError toJSONError() const;
 };
 
 struct TypeCheckerResult {
     std::vector<TypeCheckerError> errors;
+
+    TypeCheckerResult(std::vector<TypeCheckerError> errors)
+        : errors(std::move(errors)) {}
+
+    [[nodiscard]] bool hasErrors() const { return !errors.empty(); }
 };
 
 class TypeChecker : public MutableASTVisitor<TypeChecker> {
     friend class ASTVisitor<TypeChecker, false>;
 
   public:
-    TypeChecker(TypeContext &typeCtx) : typeCtx(typeCtx), currentFunction(nullptr) {}
+    TypeChecker(TypeContext &typeCtx)
+        : typeCtx(&typeCtx), arena(typeCtx.getArena()),
+          currentFunction(nullptr) {}
 
     TypeCheckerResult analyzeModuleAST(ModuleAST &module);
 
   private:
-    TypeContext &typeCtx;
+    TypeContext *typeCtx;
+    Arena *arena;
     FunctionDeclAST *currentFunction;
     std::vector<TypeCheckerError> errors;
 

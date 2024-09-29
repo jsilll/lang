@@ -4,10 +4,10 @@
 // inspired by C, Kotlin, Rust, and Swift.
 fn main(): void {
     1;
-    println(0);
+    println(0, 1);
 }
 
-fn println() : void {
+fn println(x: number, y: number): void {
     // This is an empty block
     {
     }

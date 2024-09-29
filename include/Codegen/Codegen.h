@@ -17,7 +17,7 @@ class Codegen : public ConstASTVisitor<Codegen> {
         : deepCodegen(false), context(std::make_unique<llvm::LLVMContext>()),
           builder(std::make_unique<llvm::IRBuilder<>>(*context)) {}
 
-    llvm::Module *generate(const ModuleAST &module);
+    llvm::Module *generateModule(const ModuleAST &module);
 
   private:
     bool deepCodegen = false;

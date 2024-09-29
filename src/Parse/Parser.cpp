@@ -416,10 +416,25 @@ ExprAST *Parser::parseExprAST(int prec) {
         case TokenKind::LParen: {
             ++cur;
 
-            ExprAST *arg = parseExprAST();
-            RETURN_IF_NULL(arg);
+            NonOwningList<ExprAST *> args;
 
-            lhs = arena->alloc<CallExprAST>(tok->span, lhs, arg);
+            const Token *argTok = peek();
+            while (argTok != nullptr && argTok->kind != TokenKind::RParen) {
+                ExprAST *arg = parseExprAST();
+                RETURN_IF_NULL(arg);
+
+                args.emplace_back(arena, arg);
+
+                argTok = peek();
+                if (argTok == nullptr || argTok->kind != TokenKind::Comma) {
+                    break;
+                }
+
+                ++cur;
+                argTok = peek();
+            }
+
+            lhs = arena->alloc<CallExprAST>(tok->span, lhs, args);
 
             EXPECT(TokenKind::RParen);
         } break;

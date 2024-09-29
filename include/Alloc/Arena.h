@@ -1,6 +1,7 @@
 #ifndef LANG_ARENA_H
 #define LANG_ARENA_H
 
+#include <cstddef>
 #include <list>
 #include <memory>
 
@@ -21,7 +22,7 @@ constexpr std::size_t gigaBytes(const std::size_t bytes) {
 class Arena {
   public:
     explicit Arena(std::size_t bytes)
-        : allocations(0), defaultSize(bytes), allocSize(0) {}
+        : defaultSize(bytes), numAllocations(0), allocSize(0) {}
 
     Arena(const Arena &) = delete;
     Arena &operator=(const Arena &) = delete;
@@ -29,7 +30,9 @@ class Arena {
     Arena(Arena &&) = default;
     Arena &operator=(Arena &&) = default;
 
-    [[nodiscard]] std::size_t totalAllocations() const { return allocations; }
+    [[nodiscard]] std::size_t totalAllocations() const {
+        return numAllocations;
+    }
 
     [[nodiscard]] std::size_t totalAllocated() const {
         std::size_t total = allocSize;
@@ -47,24 +50,29 @@ class Arena {
         avail.splice(avail.begin(), used);
     }
 
+    template <typename T> void dealloc(T *ptr) {
+        static_assert(std::is_trivially_destructible_v<T>,
+                      "T must be trivially destructible");
+        std::byte *start = block.data.get() + allocSize - sizeof(T);
+        assert(reinterpret_cast<T *>(start) == ptr);
+        allocSize -= sizeof(T);
+    }
+
     template <typename T, typename... Args> T *alloc(Args &&...args) {
         static_assert(std::is_trivially_destructible_v<T>,
                       "T must be trivially destructible");
-        ++allocations;
+        ++numAllocations;
         return new (allocInternal(sizeof(T))) T(std::forward<Args>(args)...);
     }
 
   private:
     struct Block {
-        std::unique_ptr<std::byte[]> data;
-        std::size_t size;
-        Block() : data(nullptr), size(0) {}
-        Block(std::size_t size)
-            : data(std::make_unique<std::byte[]>(size)), size(size) {}
+        std::size_t size = 0;
+        std::unique_ptr<std::byte[]> data = nullptr;
     };
 
-    std::size_t allocations;
     std::size_t defaultSize;
+    std::size_t numAllocations;
     std::size_t allocSize;
     Block block;
     std::list<Block> used;

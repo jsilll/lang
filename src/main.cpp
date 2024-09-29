@@ -2,7 +2,6 @@
 #include "Support/Reporting.h"
 #include "Support/SourceFile.h"
 
-#include "AST/AST.h"
 #include "AST/ASTPrinter.h"
 
 #include "Lex/Lexer.h"
@@ -30,6 +29,7 @@ enum class CompilerUntilStage {
     None,
     Lex,
     AST,
+    Sema,
 };
 
 enum class CompilerEmitAction {
@@ -54,10 +54,13 @@ const llvm::cl::opt<CompilerErrorFormat> compilerErrorFormat(
 
 const llvm::cl::opt<CompilerUntilStage> compilerUntilStage(
     "until", llvm::cl::desc("Select the stage until which the compiler run"),
-    llvm::cl::values(clEnumValN(CompilerUntilStage::Lex, "lex",
-                                "Run the compiler until the lexing stage"),
-                     clEnumValN(CompilerUntilStage::AST, "ast",
-                                "Run the compiler until the parsing stage")),
+    llvm::cl::values(
+        clEnumValN(CompilerUntilStage::Lex, "lex",
+                   "Run the compiler until the lexing stage"),
+        clEnumValN(CompilerUntilStage::AST, "ast",
+                   "Run the compiler until the parsing stage"),
+        clEnumValN(CompilerUntilStage::Sema, "sema",
+                   "Run the compiler until the semantic analysis stage")),
     llvm::cl::init(CompilerUntilStage::None));
 
 const llvm::cl::opt<CompilerEmitAction> compilerEmitAction(
@@ -104,6 +107,10 @@ int main(int argc, char **argv) {
 
     const lang::SourceFile source(inputFilename, file.get()->getBuffer());
 
+    // -------------------------------------------------------------------------
+    // Lexing
+    // -------------------------------------------------------------------------
+
     lang::Lexer lexer(file.get()->getBuffer());
     const auto lexResult = lexer.lexAll();
 
@@ -113,7 +120,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (!lexResult.errors.empty()) {
+    if (lexResult.hasErrors()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      lexResult.errors);
         return EXIT_FAILURE;
@@ -128,14 +135,19 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    // -------------------------------------------------------------------------
+    // Parsing
+    // -------------------------------------------------------------------------
+
     lang::Arena arena(lang::kiloBytes(32));
+    lang::ASTPrinter astPrinter(llvm::outs());
+
     lang::TypeContext typeCtx(arena);
 
-    lang::ASTPrinter astPrinter(llvm::outs());
     lang::Parser parser(arena, typeCtx, lexResult.tokens);
-
     const auto parseResult = parser.parseModuleAST();
-    DEBUG("%lu alloc() with %lu bytes", arena.totalAllocations(),
+
+    DEBUG("%lu allocation(s) with %lu bytes", arena.totalAllocations(),
           arena.totalAllocated());
 
     if (compilerEmitAction == CompilerEmitAction::Src) {
@@ -144,10 +156,11 @@ int main(int argc, char **argv) {
     }
 
     if (compilerEmitAction == CompilerEmitAction::AST) {
+        llvm::outs() << "Parsed AST:\n";
         astPrinter.visit(*parseResult.module);
     }
 
-    if (!parseResult.errors.empty()) {
+    if (parseResult.hasErrors()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      parseResult.errors);
         return EXIT_FAILURE;
@@ -157,54 +170,78 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    lang::ModuleAST *module = parseResult.module;
+    // -------------------------------------------------------------------------
+    // Control Flow Analysis
+    // -------------------------------------------------------------------------
 
     lang::CFA controlFlowAnalyzer;
-    const auto cfaResult = controlFlowAnalyzer.analyzeModuleAST(*module);
+    const auto cfaResult =
+        controlFlowAnalyzer.analyzeModuleAST(*parseResult.module);
 
-    if (!cfaResult.errors.empty()) {
+    if (cfaResult.hasErrors()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      cfaResult.errors);
         return EXIT_FAILURE;
     }
 
+    // -------------------------------------------------------------------------
+    // Resolution
+    // -------------------------------------------------------------------------
+
     lang::Resolver resolver;
-    const auto resolveResult = resolver.resolveModuleAST(*module);
+    const auto resolveResult = resolver.resolveModuleAST(*parseResult.module);
 
     if (compilerEmitAction == CompilerEmitAction::AST) {
-        astPrinter.visit(*module);
+        llvm::outs() << "Resolved AST:\n";
+        astPrinter.visit(*parseResult.module);
     }
 
-    if (!resolveResult.errors.empty()) {
+    if (resolveResult.hasErrors()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      resolveResult.errors);
         return EXIT_FAILURE;
     }
 
+    // -------------------------------------------------------------------------
+    // Type Checking
+    // -------------------------------------------------------------------------
+
     lang::TypeChecker typeChecker(typeCtx);
-    const auto typeCheckerResult = typeChecker.analyzeModuleAST(*module);
+    const auto typeCheckerResult =
+        typeChecker.analyzeModuleAST(*parseResult.module);
+
+    DEBUG("%lu custom type(s) created", typeCtx.getNumTypes());
 
     if (compilerEmitAction == CompilerEmitAction::AST) {
-        astPrinter.visit(*module);
+        llvm::outs() << "Type-checked AST:\n";
+        astPrinter.visit(*parseResult.module);
     }
 
-    if (!resolveResult.errors.empty()) {
+    if (resolveResult.hasErrors()) {
         reportErrors(llvm::errs(), compilerErrorFormat, source,
                      typeCheckerResult.errors);
         return EXIT_FAILURE;
     }
 
+    if (compilerUntilStage == CompilerUntilStage::Sema) {
+        return EXIT_SUCCESS;
+    }
+
+    // -------------------------------------------------------------------------
+    // Code Generation
+    // -------------------------------------------------------------------------
+
     lang::Codegen codegen;
-    const llvm::Module *llvmModule = codegen.generate(*module);
+    const llvm::Module *llvmModule =
+        codegen.generateModule(*parseResult.module);
 
     if (compilerEmitAction == CompilerEmitAction::LLVM) {
         llvmModule->print(llvm::outs(), nullptr);
     }
 
     if (llvm::verifyModule(*llvmModule, &llvm::errs())) {
-        llvm::errs() << "Error: generated LLVM IR is invalid\n";
         return EXIT_FAILURE;
     }
-    
+
     return EXIT_SUCCESS;
 }

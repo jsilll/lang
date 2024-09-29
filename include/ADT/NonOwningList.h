@@ -9,6 +9,7 @@ template <typename T> class NonOwningList {
     struct Node {
         T data;
         Node *next;
+
         explicit Node(const T &data) noexcept : data(data), next(nullptr) {}
     };
 
@@ -87,7 +88,7 @@ template <typename T> class NonOwningList {
         const Node *cur;
     };
 
-    NonOwningList() noexcept : head(nullptr), tail(nullptr), size_(0) {}
+    NonOwningList() noexcept : mHead(nullptr), mTail(nullptr), mSize(0) {}
     ~NonOwningList() = default;
 
     NonOwningList(NonOwningList &&) = delete;
@@ -96,15 +97,15 @@ template <typename T> class NonOwningList {
     NonOwningList(const NonOwningList &) = default;
     NonOwningList &operator=(const NonOwningList &) = default;
 
-    [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
-    [[nodiscard]] std::size_t size() const noexcept { return size_; }
+    [[nodiscard]] bool empty() const noexcept { return mSize == 0; }
+    [[nodiscard]] std::size_t size() const noexcept { return mSize; }
 
-    [[nodiscard]] iterator begin() noexcept { return iterator(head); }
+    [[nodiscard]] iterator begin() noexcept { return iterator(mHead); }
     [[nodiscard]] const_iterator begin() const noexcept {
-        return const_iterator(head);
+        return const_iterator(mHead);
     }
     [[nodiscard]] const_iterator cbegin() const noexcept {
-        return const_iterator(head);
+        return const_iterator(mHead);
     }
 
     [[nodiscard]] iterator end() noexcept { return iterator(nullptr); }
@@ -115,35 +116,35 @@ template <typename T> class NonOwningList {
         return const_iterator(nullptr);
     }
 
-    T &front() { return head->data; }
-    [[nodiscard]] const T &front() const { return head->data; }
-    T &back() { return tail->data; }
-    [[nodiscard]] const T &back() const { return tail->data; }
+    T &front() { return mHead->data; }
+    [[nodiscard]] const T &front() const { return mHead->data; }
+    T &back() { return mTail->data; }
+    [[nodiscard]] const T &back() const { return mTail->data; }
 
     void clear() {
-        head = tail = nullptr;
-        size_ = 0;
+        mHead = mTail = nullptr;
+        mSize = 0;
     }
 
     // NOLINTNEXTLINE
     void push_front(Node *node) {
-        node->next = head;
-        head = node;
-        if (tail == nullptr) {
-            tail = node;
+        node->next = mHead;
+        mHead = node;
+        if (mTail == nullptr) {
+            mTail = node;
         }
-        ++size_;
+        ++mSize;
     }
 
     // NOLINTNEXTLINE
     void push_back(Node *node) {
         if (empty()) {
-            head = tail = node;
+            mHead = mTail = node;
         } else {
-            tail->next = node;
-            tail = node;
+            mTail->next = node;
+            mTail = node;
         }
-        ++size_;
+        ++mSize;
     }
 
     // NOLINTNEXTLINE
@@ -151,12 +152,12 @@ template <typename T> class NonOwningList {
         if (empty()) {
             return;
         }
-        Node *tmp = head;
-        head = head->next;
-        if (head == nullptr) {
-            tail = nullptr;
+        Node *tmp = mHead;
+        mHead = mHead->next;
+        if (mHead == nullptr) {
+            mTail = nullptr;
         }
-        --size_;
+        --mSize;
         // NOTE: We don't delete the node, as it's managed by the caller.
     }
 
@@ -173,10 +174,10 @@ template <typename T> class NonOwningList {
     }
 
   private:
-    Node *head;
-    Node *tail;
+    Node *mHead;
+    Node *mTail;
     // NOLINTNEXTLINE
-    std::size_t size_;
+    std::size_t mSize;
 };
 
 #endif // LANG_NON_OWNING_LIST_H

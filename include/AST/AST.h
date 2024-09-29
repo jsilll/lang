@@ -124,10 +124,10 @@ struct BinaryExprAST : public ExprAST {
 
 struct CallExprAST : public ExprAST {
     ExprAST *callee;
-    ExprAST *arg; // TODO: support multiple arguments
-    // NOLINTNEXTLINE
-    CallExprAST(std::string_view span, ExprAST *callee, ExprAST *arg)
-        : ExprAST(ExprASTKind::Call, span), callee(callee), arg(arg) {}
+    NonOwningList<ExprAST *> args;
+    CallExprAST(std::string_view span, ExprAST *callee,
+                NonOwningList<ExprAST *> args)
+        : ExprAST(ExprASTKind::Call, span), callee(callee), args(args) {}
 };
 
 struct IndexExprAST : public ExprAST {
@@ -210,17 +210,17 @@ struct FunctionDeclAST : public DeclAST {
     NonOwningList<LocalStmtAST *> params;
     Type *retType;
     BlockStmtAST *body;
+    Type *type;
     FunctionDeclAST(std::string_view ident,
                     NonOwningList<LocalStmtAST *> params, Type *retType,
                     BlockStmtAST *body)
         : DeclAST(DeclASTKind::Function, ident), params(params),
-          retType(retType), body(body) {}
+          retType(retType), body(body), type(nullptr) {}
 };
 
 /// === Identifier Expressions ===
 
-using IdentifierDecl =
-    std::variant<std::monostate, LocalStmtAST *, FunctionDeclAST *>;
+using IdentifierDecl = std::variant<LocalStmtAST *, FunctionDeclAST *>;
 
 struct IdentifierExprAST : public ExprAST {
     IdentifierDecl decl;

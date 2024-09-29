@@ -1,4 +1,5 @@
 #include "Analysis/TypeChecker.h"
+#include "ADT/NonOwningList.h"
 
 namespace {
 
@@ -21,7 +22,8 @@ TextError TypeCheckerError::toTextError() const {
     case TypeCheckerErrorKind::InvalidBinaryOperation:
         return {span, "Invalid binary operation", "Type mismatch"};
     }
-    return {span, "Unknown type checking error title", "Unknown type checking error label"};
+    return {span, "Unknown type checking error title",
+            "Unknown type checking error label"};
 }
 
 JSONError TypeCheckerError::toJSONError() const {
@@ -64,7 +66,8 @@ void TypeChecker::visit(ReturnStmtAST &node) {
             errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
         } else {
             if (node.expr->type != currentFunction->retType) {
-                errors.push_back({TypeCheckerErrorKind::InvalidReturn, node.span});
+                errors.push_back(
+                    {TypeCheckerErrorKind::InvalidReturn, node.span});
             }
         }
     }
@@ -78,12 +81,14 @@ void TypeChecker::visit(LocalStmtAST &node) {
             node.type = node.init->type;
         } else {
             if (node.type != node.init->type) {
-                errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
+                errors.push_back(
+                    {TypeCheckerErrorKind::InvalidAssignment, node.span});
             }
         }
     } else {
         if (node.type == nullptr) {
-            errors.push_back({TypeCheckerErrorKind::InvalidAssignment, node.span});
+            errors.push_back(
+                {TypeCheckerErrorKind::InvalidAssignment, node.span});
         }
     }
 }
@@ -118,17 +123,23 @@ void TypeChecker::visit(WhileStmtAST &node) {
 }
 
 void TypeChecker::visit(IdentifierExprAST &node) {
-    std::visit(
-        Overloaded{
-            [&](const std::monostate) {},
-            [&](const LocalStmtAST *stmt) { node.type = stmt->type; },
-            // TODO: here the type should be function pointer
-            [&](const FunctionDeclAST *decl) { node.type = decl->retType; },
-        },
-        node.decl);
+    std::visit(Overloaded{
+                   [&](const LocalStmtAST *stmt) { node.type = stmt->type; },
+                   [&](const FunctionDeclAST *decl) {
+                       NonOwningList<Type *> list;
+                       for (auto *param : decl->params) {
+                           list.emplace_back(arena, param->type);
+                       }
+                       list.emplace_back(arena, decl->retType);
+                       node.type = typeCtx->make<FunctionType>(list);
+                   },
+               },
+               node.decl);
 }
 
-void TypeChecker::visit(NumberExprAST &node) { node.type = typeCtx.getTypeNumber(); }
+void TypeChecker::visit(NumberExprAST &node) {
+    node.type = typeCtx->getTypeNumber();
+}
 
 void TypeChecker::visit(UnaryExprAST &node) {
     ASTVisitor::visit(*node.expr);
@@ -141,7 +152,8 @@ void TypeChecker::visit(BinaryExprAST &node) {
     ASTVisitor::visit(*node.rhs);
 
     if (node.lhs->type != node.rhs->type) {
-        errors.push_back({TypeCheckerErrorKind::InvalidBinaryOperation, node.span});
+        errors.push_back(
+            {TypeCheckerErrorKind::InvalidBinaryOperation, node.span});
     }
 
     node.type = node.lhs->type;
@@ -149,7 +161,9 @@ void TypeChecker::visit(BinaryExprAST &node) {
 
 void TypeChecker::visit(CallExprAST &node) {
     ASTVisitor::visit(*node.callee);
-    ASTVisitor::visit(*node.arg);
+    for (auto &arg : node.args) {
+        ASTVisitor::visit(*arg);
+    }
 
     // TODO: Verify that the callee is a function and that the argument types
     // match the parameter types

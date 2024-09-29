@@ -12,7 +12,7 @@ template <class... Ts> Overloaded(Ts...) -> Overloaded<Ts...>;
 
 namespace lang {
 
-llvm::Module *Codegen::generate(const ModuleAST &module) {
+llvm::Module *Codegen::generateModule(const ModuleAST &module) {
     llvmModule = std::make_unique<llvm::Module>("main", *context);
     for (auto *decl : module.decls) {
         ASTVisitor::visit(*decl);
@@ -120,7 +120,6 @@ void Codegen::visit(const WhileStmtAST &node) {
 
 void Codegen::visit(const IdentifierExprAST &node) {
     std::visit(Overloaded{
-                   [&](const std::monostate &decl) { exprResult = nullptr; },
                    [&](const LocalStmtAST *decl) {
                        exprResult = namedValues.at(decl);
                    },
@@ -186,17 +185,15 @@ void Codegen::visit(const BinaryExprAST &node) {
 void Codegen::visit(const CallExprAST &node) {
     if (node.callee->kind == ExprASTKind::Identifier) {
         auto *callee = static_cast<IdentifierExprAST *>(node.callee);
-        std::visit(
-            Overloaded{
-                [&](const std::monostate &decl) { exprResult = nullptr; },
-                [&](const LocalStmtAST *decl) { exprResult = nullptr; },
-                [&](const FunctionDeclAST *decl) {
-                    exprResult = builder->CreateCall(
-                        llvmModule->getFunction(decl->ident),
-                        std::vector<llvm::Value *>(1, exprResult));
-                },
-            },
-            callee->decl);
+        std::visit(Overloaded{
+                       [&](const LocalStmtAST *decl) { exprResult = nullptr; },
+                       [&](const FunctionDeclAST *decl) {
+                           exprResult = builder->CreateCall(
+                               llvmModule->getFunction(decl->ident),
+                               std::vector<llvm::Value *>(1, exprResult));
+                       },
+                   },
+                   callee->decl);
     } else {
         // TODO:
         // ASTVisitor::visit(*node.callee);

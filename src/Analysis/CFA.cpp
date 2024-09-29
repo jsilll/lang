@@ -4,6 +4,9 @@ namespace lang {
 
 TextError CFAError::toTextError() const {
     switch (kind) {
+    case CFAErrorKind::EarlyBreakStmt:
+        return {span, "Early break statement",
+                "Code after break statement will never be executed"};
     case CFAErrorKind::EarlyReturnStmt:
         return {span, "Early return statement",
                 "Code after return statement will never be executed"};
@@ -17,6 +20,8 @@ TextError CFAError::toTextError() const {
 
 JSONError CFAError::toJSONError() const {
     switch (kind) {
+    case CFAErrorKind::EarlyBreakStmt:
+        return {span, "cfa-early-break-stmt"};
     case CFAErrorKind::EarlyReturnStmt:
         return {span, "cfa-early-return-stmt"};
     case CFAErrorKind::InvalidBreakStmt:
@@ -51,8 +56,11 @@ void CFA::visit(BlockStmtAST &node) {
         ++i;
         if (stmt->kind == StmtASTKind::Break ||
             stmt->kind == StmtASTKind::Return) {
+            CFAErrorKind kind = stmt->kind == StmtASTKind::Break
+                                    ? CFAErrorKind::EarlyBreakStmt
+                                    : CFAErrorKind::EarlyReturnStmt;
             if (i != node.stmts.size()) {
-                errors.push_back({CFAErrorKind::EarlyReturnStmt, stmt->span});
+                errors.push_back({kind, stmt->span});
                 break;
             }
         }

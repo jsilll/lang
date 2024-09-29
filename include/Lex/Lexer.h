@@ -16,15 +16,22 @@ enum class LexErrorKind {
 struct LexError {
     LexErrorKind kind;
     std::string_view span;
+
     LexError(LexErrorKind kind, std::string_view span)
         : kind(kind), span(span) {}
+
     TextError toTextError() const;
+
     JSONError toJSONError() const;
 };
 
 struct LexResult {
     std::vector<Token> tokens;
     std::vector<LexError> errors;
+
+    LexResult() = default;
+
+    [[nodiscard]] bool hasErrors() const { return !errors.empty(); }
 };
 
 class Lexer {

@@ -10,6 +10,7 @@
 namespace lang {
 
 enum class CFAErrorKind {
+    EarlyBreakStmt,
     EarlyReturnStmt,
     InvalidBreakStmt,
 };
@@ -17,14 +18,20 @@ enum class CFAErrorKind {
 struct CFAError {
     CFAErrorKind kind;
     std::string_view span;
+
     CFAError(CFAErrorKind kind, std::string_view span)
         : kind(kind), span(span) {}
+
     TextError toTextError() const;
     JSONError toJSONError() const;
 };
 
 struct CFAResult {
     std::vector<CFAError> errors;
+
+    CFAResult(std::vector<CFAError> errors) : errors(std::move(errors)) {}
+
+    [[nodiscard]] bool hasErrors() const { return !errors.empty(); }
 };
 
 class CFA : public MutableASTVisitor<CFA> {

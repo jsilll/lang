@@ -29,7 +29,9 @@ void *Arena::allocInternal(std::size_t size) {
         }
 
         if (block.data == nullptr) {
-            block = Block{std::max(size, defaultSize)};
+            block = Block{
+                std::max(size, defaultSize),
+                std::make_unique<std::byte[]>(std::max(size, defaultSize))};
         }
 
         allocSize = 0;

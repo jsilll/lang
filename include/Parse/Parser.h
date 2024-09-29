@@ -26,15 +26,23 @@ struct ParseError {
     ParseErrorKind kind;
     std::string_view span;
     TokenKind expected;
+
     ParseError(ParseErrorKind kind, std::string_view span, TokenKind expected)
         : kind(kind), span(span), expected(expected) {}
+
     TextError toTextError() const;
+
     JSONError toJSONError() const;
 };
 
 struct ParseResult {
     ModuleAST *module;
     std::vector<ParseError> errors;
+
+    ParseResult(ModuleAST *module, std::vector<ParseError> errors)
+        : module(module), errors(std::move(errors)) {}
+
+    [[nodiscard]] bool hasErrors() const { return !errors.empty(); }
 };
 
 class Parser {
