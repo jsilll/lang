@@ -93,7 +93,7 @@ void reportErrors(
 
 } // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) try {
     llvm::cl::ParseCommandLineOptions(argc, argv, "Lang Compiler\n", nullptr,
                                       nullptr, true);
 
@@ -244,4 +244,7 @@ int main(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+} catch (const std::exception &e) {
+    llvm::errs() << "Error: " << e.what() << '\n';
+    return EXIT_FAILURE;
 }
